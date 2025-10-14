@@ -1,0 +1,109 @@
+{
+    "profiles": [
+        {
+            "complex_modifications": {
+                "rules": [
+                    {
+                        "description": "Caps Lock to Hyper, tap Esc",
+                        "manipulators": [
+                            {
+                                "from": {
+                                    "key_code": "caps_lock",
+                                    "modifiers": { "optional": ["any"] }
+                                },
+                                "to": [
+                                    {
+                                        "key_code": "left_shift",
+                                        "modifiers": ["left_command", "left_control", "left_option"]
+                                    }
+                                ],
+                                "to_if_alone": [{ "key_code": "escape" }],
+                                "type": "basic"
+                            }
+                        ]
+                    },
+                    {
+                        "description": "Hyper+1..9 to Aerospace workspace",
+                        "manipulators": [
+                            {
+                                "from": {
+                                    "key_code": "1",
+                                    "modifiers": { "mandatory": ["left_command", "left_control", "left_option", "left_shift"] }
+                                },
+                                "to": [{ "shell_command": "aerospace workspace 1" }],
+                                "type": "basic"
+                            },
+                            {
+                                "from": {
+                                    "key_code": "2",
+                                    "modifiers": { "mandatory": ["left_command", "left_control", "left_option", "left_shift"] }
+                                },
+                                "to": [{ "shell_command": "aerospace workspace 2" }],
+                                "type": "basic"
+                            },
+                            {
+                                "from": {
+                                    "key_code": "3",
+                                    "modifiers": { "mandatory": ["left_command", "left_control", "left_option", "left_shift"] }
+                                },
+                                "to": [{ "shell_command": "aerospace workspace 3" }],
+                                "type": "basic"
+                            },
+                            {
+                                "from": {
+                                    "key_code": "4",
+                                    "modifiers": { "mandatory": ["left_command", "left_control", "left_option", "left_shift"] }
+                                },
+                                "to": [{ "shell_command": "aerospace workspace 4" }],
+                                "type": "basic"
+                            },
+                            {
+                                "from": {
+                                    "key_code": "5",
+                                    "modifiers": { "mandatory": ["left_command", "left_control", "left_option", "left_shift"] }
+                                },
+                                "to": [{ "shell_command": "aerospace workspace 5" }],
+                                "type": "basic"
+                            },
+                            {
+                                "from": {
+                                    "key_code": "6",
+                                    "modifiers": { "mandatory": ["left_command", "left_control", "left_option", "left_shift"] }
+                                },
+                                "to": [{ "shell_command": "aerospace workspace 6" }],
+                                "type": "basic"
+                            },
+                            {
+                                "from": {
+                                    "key_code": "7",
+                                    "modifiers": { "mandatory": ["left_command", "left_control", "left_option", "left_shift"] }
+                                },
+                                "to": [{ "shell_command": "aerospace workspace 7" }],
+                                "type": "basic"
+                            },
+                            {
+                                "from": {
+                                    "key_code": "8",
+                                    "modifiers": { "mandatory": ["left_command", "left_control", "left_option", "left_shift"] }
+                                },
+                                "to": [{ "shell_command": "aerospace workspace 8" }],
+                                "type": "basic"
+                            },
+                            {
+                                "from": {
+                                    "key_code": "9",
+                                    "modifiers": { "mandatory": ["left_command", "left_control", "left_option", "left_shift"] }
+                                },
+                                "to": [{ "shell_command": "aerospace workspace 9" }],
+                                "type": "basic"
+                            }
+                        ]
+                    }
+                ]
+            },
+            "name": "Hyper",
+            "selected": true,
+            "virtual_hid_keyboard": { "keyboard_type_v2": "iso" }
+        }
+    ]
+}

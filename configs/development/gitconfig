@@ -1,0 +1,12 @@
+[user]
+	name = Peter Campbell Clarke
+	email = peter@holonic.bio
+[pull]
+	rebase = false
+[init]
+	defaultBranch = main
+[core]
+	pager = delta
+[delta]
+	navigate = true
+	syntax-theme = Catppuccin-mocha
