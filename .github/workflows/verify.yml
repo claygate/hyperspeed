@@ -16,5 +16,7 @@ jobs:
           sudo mv gitleaks /usr/local/bin/
       - name: Run pre-commit checks
         run: pre-commit run --all-files
+        env:
+          SKIP: regenerate-directory-context
       - name: Gitleaks full scan (belt-and-suspenders)
         run: gitleaks detect --source . --redact
