@@ -18,7 +18,7 @@ else
 
     # Close all windows
     for wid in "${WINDOW_IDS[@]}"; do
-        aerospace close --window-id ${wid} 2>/dev/null || true
+        aerospace close --window-id "${wid}" 2>/dev/null || true
     done
 fi
 

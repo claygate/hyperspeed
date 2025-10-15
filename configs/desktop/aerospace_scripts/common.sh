@@ -27,6 +27,7 @@ plan() {
 # Act: execute if AUTONOMY >= 1, otherwise plan
 act() {
   if [ "$ALPHA" -ge 1 ]; then
+    # shellcheck disable=SC2294
     eval "$@"
   else
     plan "$@"
@@ -40,7 +41,7 @@ wait_until() {
   local timeout="${2:-10}"
   local elapsed=0
 
-  while [ $elapsed -lt $timeout ]; do
+  while [ "$elapsed" -lt "$timeout" ]; do
     if eval "$cmd" >/dev/null 2>&1; then
       return 0
     fi

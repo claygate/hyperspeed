@@ -19,6 +19,7 @@ run() {
   if [ "$DRYRUN" = "1" ]; then
     echo "[PLAN] $*"
   else
+    # shellcheck disable=SC2294
     eval "$@"
   fi
 }
@@ -84,7 +85,8 @@ ask() {
 backup_file() {
   local file="$1"
   if [ "$BACKUP" = "1" ] && [ -f "$file" ]; then
-    local backup_path="$BACKUP_DIR/$(dirname "$file")"
+    local backup_path
+    backup_path="$BACKUP_DIR/$(dirname "$file")"
     run "mkdir -p '$backup_path'"
     run "cp -p '$file' '$backup_path/$(basename "$file")'"
     print_info "Backed up: $file"
@@ -94,7 +96,8 @@ backup_file() {
 backup_dir() {
   local dir="$1"
   if [ "$BACKUP" = "1" ] && [ -d "$dir" ]; then
-    local backup_path="$BACKUP_DIR/$(dirname "$dir")"
+    local backup_path
+    backup_path="$BACKUP_DIR/$(dirname "$dir")"
     run "mkdir -p '$backup_path'"
     run "cp -Rp '$dir' '$backup_path/'"
     print_info "Backed up: $dir"

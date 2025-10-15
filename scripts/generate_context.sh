@@ -85,6 +85,7 @@ while IFS= read -r file; do
         FILE_SIZE=$(stat -f%z "$file" 2>/dev/null || stat -c%s "$file" 2>/dev/null || echo 0)
         if [ "$FILE_SIZE" -lt 1048576 ]; then
             # Add file header
+            # shellcheck disable=SC2129
             cat >> "$OUTPUT_FILE" <<EOF
 
 ### File: \`$file\`
@@ -107,7 +108,7 @@ EOF
 
 ### File: \`$file\`
 
-_[Skipped: File too large ($(numfmt --to=iec $FILE_SIZE 2>/dev/null || echo "$FILE_SIZE bytes"))]_
+_[Skipped: File too large ($(numfmt --to=iec "$FILE_SIZE" 2>/dev/null || echo "$FILE_SIZE bytes"))]_
 
 ---
 
@@ -146,7 +147,7 @@ EOF
 # Calculate file size
 if command -v numfmt >/dev/null 2>&1; then
     SIZE=$(stat -f%z "$OUTPUT_FILE" 2>/dev/null || stat -c%s "$OUTPUT_FILE")
-    SIZE_HUMAN=$(numfmt --to=iec $SIZE)
+    SIZE_HUMAN=$(numfmt --to=iec "$SIZE")
 else
     SIZE_HUMAN=$(du -h "$OUTPUT_FILE" | cut -f1)
 fi

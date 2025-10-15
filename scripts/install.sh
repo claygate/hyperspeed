@@ -13,6 +13,7 @@ run() {
   if [ "$DRYRUN" = "1" ]; then
     echo "[PLAN] $*"
   else
+    # shellcheck disable=SC2294
     eval "$@"
   fi
 }
@@ -297,7 +298,7 @@ fi
 print_info "Installing tmux plugins..."
 run "tmux start-server 2>&1 || true"
 run "tmux new-session -d 2>&1 || true"
-run "~/.tmux/plugins/tpm/scripts/install_plugins.sh 2>&1 || true"
+run "$HOME/.tmux/plugins/tpm/scripts/install_plugins.sh 2>&1 || true"
 print_success "tmux plugins installed"
 
 # Step 18: Create PostgreSQL database

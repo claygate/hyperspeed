@@ -24,7 +24,7 @@ open_until_count "$WORKSPACE" "Ghostty" "com.mitchellh.ghostty" "$TARGET_COUNT"
 sleep 1
 
 # Get all Ghostty window IDs in this workspace
-WINDOW_IDS=($(aerospace list-windows --workspace "$WORKSPACE" --app-id com.mitchellh.ghostty | awk '{print $1}'))
+mapfile -t WINDOW_IDS < <(aerospace list-windows --workspace "$WORKSPACE" --app-id com.mitchellh.ghostty | awk '{print $1}')
 
 WINDOW_COUNT=${#WINDOW_IDS[@]}
 echo "Found $WINDOW_COUNT Ghostty windows in workspace $WORKSPACE"

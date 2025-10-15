@@ -69,7 +69,7 @@ if [ "$ALPHA" -ge 1 ] && [ "$VSCODE_COUNT" -ge 1 ] && [ "$CHROME_COUNT" -ge 1 ];
   if [ "$VSCODE_COUNT" -ge 1 ]; then
     aerospace focus --window-id "${VSCODE_IDS[0]}"
     # Increase width significantly
-    for i in {1..3}; do
+    for _ in {1..3}; do
       aerospace resize width +200 2>/dev/null || true
     done
   fi

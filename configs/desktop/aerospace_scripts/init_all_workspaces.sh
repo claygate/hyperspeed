@@ -41,7 +41,9 @@ for ws in "${WORKSPACES[@]}"; do
   fi
 
   # Small delay between workspaces to avoid race conditions
-  [ "$AUTONOMY" -ge 1 ] && sleep 2 || true
+  if [ "$AUTONOMY" -ge 1 ]; then
+    sleep 2
+  fi
 done
 
 echo ""
