@@ -5,8 +5,8 @@ export OPENROUTER_API_KEY="${OPENROUTER_API_KEY:-$(security find-generic-passwor
 # Autonomy slider for scripts: 0=plan-only (safe), 1=full-act
 export AUTONOMY="${AUTONOMY:-0}"
 
-# Added by Windsurf (user-specific)
-[ -d "/Users/$USER/.codeium/windsurf/bin" ] && export PATH="/Users/$USER/.codeium/windsurf/bin:$PATH"
+# Windsurf (optional)
+[ -d "$HOME/.codeium/windsurf/bin" ] && export PATH="$HOME/.codeium/windsurf/bin:$PATH"
 
 # Development environment setup
 export PATH="/opt/homebrew/bin:/usr/local/bin:$HOME/.local/bin:$PATH"

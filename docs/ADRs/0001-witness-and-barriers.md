@@ -116,10 +116,10 @@ for _ in $(seq 1 $need); do act 'open -na "Ghostty"'; done
 - [x] Create GitHub Actions workflow
 - [x] Update .githooks/pre-commit to fail on errors
 
-### Phase 2: Barriers (In Progress)
-- [ ] Add AUTONOMY slider to workspace scripts
-- [ ] Add DRYRUN mode to install.sh
-- [ ] Make all scripts idempotent
+### Phase 2: Barriers (Complete)
+- [x] Add AUTONOMY slider to workspace scripts
+- [x] Add DRYRUN mode to install.sh
+- [x] Make all scripts idempotent
 
 ### Phase 3: Documentation (Pending)
 - [ ] Update README with new patterns

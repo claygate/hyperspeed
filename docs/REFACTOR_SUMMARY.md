@@ -348,9 +348,9 @@ DRYRUN=0 ./scripts/install.sh
 
 ### Remaining Risks ⚠️
 
-- ⚠️ Git history still contains exposed key (action required - use BFG)
-- ⚠️ Pre-commit hooks not yet installed (one-time setup: `just hooks`)
-- ⚠️ CI workflow untested (no PR created yet)
+- ⚠️ Git history may still contain old keys; purge with BFG/filter-repo if not done
+- ⚠️ Ensure contributors run `pre-commit install`
+- ⚠️ Verify CI on first PR
 
 ## Resources
 

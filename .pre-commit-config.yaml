@@ -17,4 +17,14 @@ repos:
   rev: v8.18.0
   hooks:
     - id: gitleaks
-      args: ["protect", "--staged"]
+      name: gitleaks (repo scan)
+      args: ["detect", "--source", ".", "--redact"]
+
+# regenerate DIRECTORY_CONTEXT.md on every commit
+- repo: local
+  hooks:
+    - id: regenerate-directory-context
+      name: Regenerate DIRECTORY_CONTEXT.md
+      entry: bash scripts/generate_context.sh
+      language: system
+      pass_filenames: false

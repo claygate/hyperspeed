@@ -159,13 +159,13 @@ if [[ -f "$CONFIG_DIR/development/gitconfig" ]]; then
   EXISTING_NAME=$(git config --global user.name 2>/dev/null || echo "")
   EXISTING_EMAIL=$(git config --global user.email 2>/dev/null || echo "")
 
-  cp "$CONFIG_DIR/development/gitconfig" "$HOME/.gitconfig"
+  run "cp '$CONFIG_DIR/development/gitconfig' '$HOME/.gitconfig'"
 
   if [[ -n "$EXISTING_NAME" ]]; then
-    git config --global user.name "$EXISTING_NAME"
+    run "git config --global user.name '$EXISTING_NAME'"
   fi
   if [[ -n "$EXISTING_EMAIL" ]]; then
-    git config --global user.email "$EXISTING_EMAIL"
+    run "git config --global user.email '$EXISTING_EMAIL'"
   fi
 
   print_success "Installed git config"
@@ -173,63 +173,63 @@ fi
 
 # Desktop environment configs
 if [[ -f "$CONFIG_DIR/desktop/aerospace.toml" ]]; then
-  cp "$CONFIG_DIR/desktop/aerospace.toml" "$HOME/.config/aerospace/aerospace.toml"
+  run "cp '$CONFIG_DIR/desktop/aerospace.toml' '$HOME/.config/aerospace/aerospace.toml'"
   print_success "Installed AeroSpace config"
 fi
 
 if [[ -f "$CONFIG_DIR/desktop/karabiner.json" ]]; then
-  cp "$CONFIG_DIR/desktop/karabiner.json" "$HOME/.config/karabiner/karabiner.json"
+  run "cp '$CONFIG_DIR/desktop/karabiner.json' '$HOME/.config/karabiner/karabiner.json'"
   print_success "Installed Karabiner config"
 fi
 
 # Editor configs
 if [[ -f "$CONFIG_DIR/editor/vscode_settings.json" ]]; then
-  mkdir -p "$HOME/Library/Application Support/Code/User"
-  cp "$CONFIG_DIR/editor/vscode_settings.json" "$HOME/Library/Application Support/Code/User/settings.json"
+  run "mkdir -p '$HOME/Library/Application Support/Code/User'"
+  run "cp '$CONFIG_DIR/editor/vscode_settings.json' '$HOME/Library/Application Support/Code/User/settings.json'"
   print_success "Installed VSCode settings"
 fi
 
 # Step 10: Clone and install additional tools
 print_info "Installing tmux plugin manager..."
 if [[ ! -d "$HOME/.tmux/plugins/tpm" ]]; then
-  git clone --depth=1 https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
+  run "git clone --depth=1 https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm"
   print_success "Installed tmux plugin manager"
 fi
 
 print_info "Installing AstroNvim..."
 if [[ ! -d "$HOME/.config/nvim" ]] || [[ ! -d "$HOME/.config/nvim/.git" ]]; then
-  git clone https://github.com/AstroNvim/AstroNvim ~/.config/nvim --depth 1
+  run "git clone https://github.com/AstroNvim/AstroNvim ~/.config/nvim --depth 1"
   if [[ -f "$CONFIG_DIR/editor/nvim_init.lua" ]]; then
-    mkdir -p "$HOME/.config/nvim/lua/user"
-    cp "$CONFIG_DIR/editor/nvim_init.lua" "$HOME/.config/nvim/lua/user/init.lua"
+    run "mkdir -p '$HOME/.config/nvim/lua/user'"
+    run "cp '$CONFIG_DIR/editor/nvim_init.lua' '$HOME/.config/nvim/lua/user/init.lua'"
   fi
   print_success "Installed AstroNvim"
 fi
 
 # Step 11: FZF shell integration
 print_info "Installing fzf shell integration..."
-$(brew --prefix)/opt/fzf/install --all --no-bash --no-fish 2>&1 | grep -v "Downloading" || true
+run "\$(brew --prefix)/opt/fzf/install --all --no-bash --no-fish 2>&1 | grep -v 'Downloading' || true"
 print_success "fzf integration installed"
 
 # Step 12: Install VSCode extensions
 print_info "Installing VSCode extensions..."
 CODE="/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code"
 if [[ -f "$CODE" ]]; then
-  "$CODE" --install-extension catppuccin.catppuccin-vsc --force
-  "$CODE" --install-extension pkief.material-icon-theme --force
-  "$CODE" --install-extension vscodevim.vim --force
-  "$CODE" --install-extension ms-python.python --force
-  "$CODE" --install-extension ms-python.vscode-pylance --force
-  "$CODE" --install-extension charliermarsh.ruff --force
-  "$CODE" --install-extension rust-lang.rust-analyzer --force
-  "$CODE" --install-extension golang.go --force
-  "$CODE" --install-extension esbenp.prettier-vscode --force
-  "$CODE" --install-extension dbaeumer.vscode-eslint --force
-  "$CODE" --install-extension ms-azuretools.vscode-docker --force
-  "$CODE" --install-extension hashicorp.terraform --force
-  "$CODE" --install-extension redhat.vscode-yaml --force
-  "$CODE" --install-extension eamodio.gitlens --force
-  "$CODE" --install-extension github.vscode-pull-request-github --force
+  run "'$CODE' --install-extension catppuccin.catppuccin-vsc --force"
+  run "'$CODE' --install-extension pkief.material-icon-theme --force"
+  run "'$CODE' --install-extension vscodevim.vim --force"
+  run "'$CODE' --install-extension ms-python.python --force"
+  run "'$CODE' --install-extension ms-python.vscode-pylance --force"
+  run "'$CODE' --install-extension charliermarsh.ruff --force"
+  run "'$CODE' --install-extension rust-lang.rust-analyzer --force"
+  run "'$CODE' --install-extension golang.go --force"
+  run "'$CODE' --install-extension esbenp.prettier-vscode --force"
+  run "'$CODE' --install-extension dbaeumer.vscode-eslint --force"
+  run "'$CODE' --install-extension ms-azuretools.vscode-docker --force"
+  run "'$CODE' --install-extension hashicorp.terraform --force"
+  run "'$CODE' --install-extension redhat.vscode-yaml --force"
+  run "'$CODE' --install-extension eamodio.gitlens --force"
+  run "'$CODE' --install-extension github.vscode-pull-request-github --force"
   print_success "VSCode extensions installed"
 else
   print_error "VSCode not found, skipping extensions"
@@ -281,16 +281,16 @@ run "launchctl load -w '$HOME/Library/LaunchAgents/com.ollama.ollama.plist' 2>&1
 print_success "Ollama LaunchAgent created"
 
 # Step 16: Install Nix (optional) - WARNING: uses curl | sh
-if [ "$DRYRUN" = "0" ]; then
+if [ "${CI:-}" = "true" ] || [ "$DRYRUN" = "1" ]; then
+  print_info "[PLAN] Would offer optional Nix install"
+else
   read -p "Install Nix package manager? (y/N): " -n 1 -r
   echo
   if [[ $REPLY =~ ^[Yy]$ ]]; then
     print_info "Installing Nix (pinned to Determinate Systems installer)..."
-    run "curl -L https://install.determinate.systems/nix | sh -s -- install"
+    curl -L https://install.determinate.systems/nix | sh -s -- install
     print_success "Nix installed"
   fi
-else
-  print_info "[PLAN] Would prompt to install Nix via Determinate Systems installer"
 fi
 
 # Step 17: Install tmux plugins
@@ -306,15 +306,19 @@ run "sleep 2"
 run "/opt/homebrew/opt/postgresql@16/bin/createdb \"\$(whoami)\" 2>&1 || echo 'Database already exists'"
 
 # Step 19: Setup AeroSpace automation (optional)
-echo ""
-read -p "Setup AeroSpace workspace automation? (Y/n): " -n 1 -r
-echo
-if [[ ! $REPLY =~ ^[Nn]$ ]]; then
-  print_info "Setting up AeroSpace automation..."
-  if [[ -f "$SCRIPT_DIR/setup_aerospace_automation.sh" ]]; then
-    bash "$SCRIPT_DIR/setup_aerospace_automation.sh"
-  else
-    print_error "AeroSpace automation script not found"
+if [ "${CI:-}" = "true" ] || [ "$DRYRUN" = "1" ]; then
+  print_info "[PLAN] Would offer AeroSpace workspace automation setup"
+else
+  echo ""
+  read -p "Setup AeroSpace workspace automation? (Y/n): " -n 1 -r
+  echo
+  if [[ ! $REPLY =~ ^[Nn]$ ]]; then
+    print_info "Setting up AeroSpace automation..."
+    if [[ -f "$SCRIPT_DIR/setup_aerospace_automation.sh" ]]; then
+      bash "$SCRIPT_DIR/setup_aerospace_automation.sh"
+    else
+      print_error "AeroSpace automation script not found"
+    fi
   fi
 fi
 

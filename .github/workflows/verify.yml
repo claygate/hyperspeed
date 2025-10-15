@@ -8,7 +8,13 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Install pre-commit
-        run: pip install pre-commit
+      - name: Install pre-commit and gitleaks
+        run: |
+          pip install pre-commit
+          wget https://github.com/gitleaks/gitleaks/releases/download/v8.18.0/gitleaks_8.18.0_linux_x64.tar.gz
+          tar -xzf gitleaks_8.18.0_linux_x64.tar.gz
+          sudo mv gitleaks /usr/local/bin/
       - name: Run pre-commit checks
         run: pre-commit run --all-files
+      - name: Gitleaks full scan (belt-and-suspenders)
+        run: gitleaks detect --source . --redact
