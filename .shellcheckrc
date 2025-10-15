@@ -1,0 +1,4 @@
+# ShellCheck configuration
+# Disable SC1091: Not following sourced files
+# We source common.sh in workspace scripts, and shellcheck doesn't need to follow it
+disable=SC1091
