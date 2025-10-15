@@ -157,3 +157,5 @@ echo "Output: $OUTPUT_FILE"
 echo "Size: $SIZE_HUMAN"
 echo ""
 echo "You can now copy the contents of $OUTPUT_FILE to provide full repository context to an LLM."
+
+exit 0
