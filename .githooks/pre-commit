@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# Pre-commit hook to regenerate DIRECTORY_CONTEXT.md
+# This ensures the context file is always up-to-date with the repository
+
+set -e
+
+echo "🔄 Regenerating directory context..."
+
+# Get to repository root
+REPO_ROOT=$(git rev-parse --show-toplevel)
+cd "$REPO_ROOT"
+
+# Run the context generation script
+if [ -f "scripts/generate_context.sh" ]; then
+    # Run the script, suppressing most output
+    ./scripts/generate_context.sh > /dev/null 2>&1 || {
+        echo "⚠️  Warning: Failed to generate context file"
+        exit 0  # Don't fail the commit, just warn
+    }
+
+    # Check if DIRECTORY_CONTEXT.md was modified
+    if [ -f "DIRECTORY_CONTEXT.md" ]; then
+        # Stage the updated context file
+        git add DIRECTORY_CONTEXT.md
+        echo "✓ Directory context updated and staged"
+    fi
+else
+    echo "⚠️  Warning: scripts/generate_context.sh not found"
+fi
