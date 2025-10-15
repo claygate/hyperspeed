@@ -9,7 +9,7 @@ CURRENT_WS=$(aerospace list-workspaces --focused)
 echo "Resetting workspace: ${CURRENT_WS}"
 
 # Get all windows in current workspace
-WINDOW_IDS=($(aerospace list-windows --workspace ${CURRENT_WS} | awk '{print $1}'))
+mapfile -t WINDOW_IDS < <(aerospace list-windows --workspace "${CURRENT_WS}" | awk '{print $1}')
 
 if [ ${#WINDOW_IDS[@]} -eq 0 ]; then
     echo "No windows to close in workspace ${CURRENT_WS}"
