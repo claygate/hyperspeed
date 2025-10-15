@@ -338,19 +338,6 @@ time zsh -i -c exit
 zsh -xv 2>&1 | ts -i '%.s'
 ```
 
-### Homebrew Tap Credential Issues
-Some taps may require GitHub authentication:
-```bash
-# Option 1: Authenticate with GitHub CLI
-gh auth login
-
-# Option 2: Use SSH-authenticated taps
-brew tap owner/repo git@github.com:owner/repo
-
-# Option 3: Install from specific commit/tag (secure)
-brew install owner/repo/formula@version
-```
-
 ### Mise Runtime Install Fails
 ```bash
 # Clear cache and retry
