@@ -28,8 +28,8 @@ open_until_count "$WORKSPACE" "Google Chrome" "com.google.Chrome" "$TARGET_CHROM
 sleep 1
 
 # Get window IDs
-VSCODE_IDS=($(aerospace list-windows --workspace "$WORKSPACE" --app-id com.microsoft.VSCode | awk '{print $1}'))
-CHROME_IDS=($(aerospace list-windows --workspace "$WORKSPACE" --app-id com.google.Chrome | awk '{print $1}'))
+mapfile -t VSCODE_IDS < <(aerospace list-windows --workspace "$WORKSPACE" --app-id com.microsoft.VSCode | awk '{print $1}')
+mapfile -t CHROME_IDS < <(aerospace list-windows --workspace "$WORKSPACE" --app-id com.google.Chrome | awk '{print $1}')
 
 VSCODE_COUNT=${#VSCODE_IDS[@]}
 CHROME_COUNT=${#CHROME_IDS[@]}

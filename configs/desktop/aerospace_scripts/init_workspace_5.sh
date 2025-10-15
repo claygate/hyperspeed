@@ -24,7 +24,7 @@ open_until_count "$WORKSPACE" "Google Chrome" "com.google.Chrome" "$TARGET_COUNT
 sleep 1
 
 # Get all Chrome window IDs in this workspace
-WINDOW_IDS=($(aerospace list-windows --workspace "$WORKSPACE" --app-id com.google.Chrome | awk '{print $1}'))
+mapfile -t WINDOW_IDS < <(aerospace list-windows --workspace "$WORKSPACE" --app-id com.google.Chrome | awk '{print $1}')
 
 WINDOW_COUNT=${#WINDOW_IDS[@]}
 echo "Found $WINDOW_COUNT Chrome windows in workspace $WORKSPACE"

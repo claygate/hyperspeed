@@ -56,7 +56,7 @@ else
 fi
 
 # Get Ghostty window IDs
-GHOSTTY_IDS=($(aerospace list-windows --workspace "$WORKSPACE" --app-id com.mitchellh.ghostty | awk '{print $1}'))
+mapfile -t GHOSTTY_IDS < <(aerospace list-windows --workspace "$WORKSPACE" --app-id com.mitchellh.ghostty | awk '{print $1}')
 GHOSTTY_COUNT=${#GHOSTTY_IDS[@]}
 
 echo "Found $GHOSTTY_COUNT Ghostty window(s)"

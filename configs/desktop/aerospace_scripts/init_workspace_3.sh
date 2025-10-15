@@ -28,8 +28,8 @@ open_until_count "$WORKSPACE" "Google Chrome" "com.google.Chrome" "$TARGET_CHROM
 sleep 1
 
 # Get window IDs
-GHOSTTY_IDS=($(aerospace list-windows --workspace "$WORKSPACE" --app-id com.mitchellh.ghostty | awk '{print $1}'))
-CHROME_IDS=($(aerospace list-windows --workspace "$WORKSPACE" --app-id com.google.Chrome | awk '{print $1}'))
+mapfile -t GHOSTTY_IDS < <(aerospace list-windows --workspace "$WORKSPACE" --app-id com.mitchellh.ghostty | awk '{print $1}')
+mapfile -t CHROME_IDS < <(aerospace list-windows --workspace "$WORKSPACE" --app-id com.google.Chrome | awk '{print $1}')
 
 GHOSTTY_COUNT=${#GHOSTTY_IDS[@]}
 CHROME_COUNT=${#CHROME_IDS[@]}

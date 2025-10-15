@@ -41,7 +41,7 @@ else
 fi
 
 # Get Safari window IDs
-SAFARI_IDS=($(aerospace list-windows --workspace "$WORKSPACE" --app-id com.apple.Safari | awk '{print $1}'))
+mapfile -t SAFARI_IDS < <(aerospace list-windows --workspace "$WORKSPACE" --app-id com.apple.Safari | awk '{print $1}')
 SAFARI_COUNT=${#SAFARI_IDS[@]}
 
 echo "Found $SAFARI_COUNT Safari window(s)"
