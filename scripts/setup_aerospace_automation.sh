@@ -36,13 +36,13 @@ if [ -f "$HOME/.config/aerospace/aerospace.toml" ]; then
     print_success "Backup created"
 fi
 
-# Install enhanced AeroSpace configuration
-print_info "Installing enhanced AeroSpace configuration..."
-if [ -f "$CONFIG_DIR/desktop/aerospace_enhanced.toml" ]; then
-    cp "$CONFIG_DIR/desktop/aerospace_enhanced.toml" "$HOME/.config/aerospace/aerospace.toml"
-    print_success "Enhanced config installed"
+# Install unified AeroSpace configuration
+print_info "Installing unified AeroSpace configuration..."
+if [ -f "$CONFIG_DIR/desktop/aerospace.toml" ]; then
+    cp "$CONFIG_DIR/desktop/aerospace.toml" "$HOME/.config/aerospace/aerospace.toml"
+    print_success "Unified config installed"
 else
-    print_error "Enhanced config not found at $CONFIG_DIR/desktop/aerospace_enhanced.toml"
+    print_error "Config not found at $CONFIG_DIR/desktop/aerospace.toml"
     exit 1
 fi
 

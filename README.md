@@ -1,6 +1,8 @@
-# Mac Development Environment Setup
+# Hyperspeed
 
 A complete, opinionated development environment for macOS with a focus on keyboard-driven workflows, modern CLI tools, and the beautiful Catppuccin Mocha theme.
+
+**By [Russet](https://github.com/russet)** 🍎 - Tools for Apple platforms
 
 ## Philosophy
 
@@ -45,8 +47,8 @@ This setup prioritizes:
 
 ```bash
 # Clone this repository
-git clone <your-repo-url> ~/mac_dev_setup
-cd ~/mac_dev_setup
+git clone https://github.com/russet/hyperspeed.git ~/hyperspeed
+cd ~/hyperspeed
 
 # Run the installation script
 chmod +x scripts/install.sh

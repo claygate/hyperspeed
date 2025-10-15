@@ -1,0 +1,20 @@
+repos:
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v4.6.0
+  hooks:
+    - id: end-of-file-fixer
+    - id: trailing-whitespace
+- repo: https://github.com/koalaman/shellcheck-precommit
+  rev: v0.9.0
+  hooks:
+    - id: shellcheck
+- repo: https://github.com/mvdan/sh
+  rev: v3.9.0
+  hooks:
+    - id: shfmt
+      args: ["-i", "2", "-s", "-ci"]
+- repo: https://github.com/gitleaks/gitleaks
+  rev: v8.18.0
+  hooks:
+    - id: gitleaks
+      args: ["protect", "--staged"]

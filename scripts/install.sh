@@ -5,6 +5,18 @@
 
 set -euo pipefail
 
+# DRYRUN mode: set DRYRUN=1 to plan without executing
+DRYRUN="${DRYRUN:-0}"
+
+# Execute command or show plan
+run() {
+  if [ "$DRYRUN" = "1" ]; then
+    echo "[PLAN] $*"
+  else
+    eval "$@"
+  fi
+}
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'

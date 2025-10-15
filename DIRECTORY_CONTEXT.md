@@ -14,15 +14,20 @@ Generated for providing full context to external LLMs.
 | |____README.md
 | |____pre-commit
 |____.DS_Store
+|____justfile
+|____.pre-commit-config.yaml
 |____.claude
 | |____settings.local.json
 |____docs
 | |____SETTINGS.md
 | |____AEROSPACE_AUTOMATION.md
 | |____ENHANCEMENT_RECOMMENDATIONS.md
+| |____ADRs
+| | |____0001-witness-and-barriers.md
 | |____GIT_HOOKS.md
 | |____PACKAGES.md
 | |____QUICK_REFERENCE.md
+| |____SECURITY.md
 |____README.md
 |____.gitignore
 |____configs
@@ -38,6 +43,7 @@ Generated for providing full context to external LLMs.
 | | |____karabiner.json
 | | |____aerospace_scripts
 | | | |____init_workspace_6.sh
+| | | |____common.sh
 | | | |____init_workspace_2.sh
 | | | |____init_workspace_3.sh
 | | | |____init_workspace_7.sh
@@ -47,19 +53,19 @@ Generated for providing full context to external LLMs.
 | | | |____init_workspace_4.sh
 | | | |____init_workspace_5.sh
 | | | |____init_workspace_1.sh
-| | |____aerospace_enhanced.toml
 | | |____aerospace.toml
 | |____editor
 | | |____vscode_settings.json
 | | |____nvim_init.lua
-| | |____nvim_user_plugins.lua
-| | |____nvim_community.lua
 |____scripts
 | |____install.sh
 | |____setup_git_hooks.sh
 | |____mac_dev_final_setup.sh
 | |____setup_aerospace_automation.sh
 | |____generate_context.sh
+|____.github
+| |____workflows
+| | |____verify.yml
 ```
 
 ---
@@ -179,6 +185,28 @@ fi
 ---
 
 
+### File: `.github/workflows/verify.yml`
+
+```
+name: verify
+on: [pull_request, push]
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pre-commit
+        run: pip install pre-commit
+      - name: Run pre-commit checks
+        run: pre-commit run --all-files
+```
+
+---
+
+
 ### File: `.gitignore`
 
 ```
@@ -225,6 +253,34 @@ Temporary Items
 # Personal notes
 NOTES.md
 TODO.md
+```
+
+---
+
+
+### File: `.pre-commit-config.yaml`
+
+```
+repos:
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v4.6.0
+  hooks:
+    - id: end-of-file-fixer
+    - id: trailing-whitespace
+- repo: https://github.com/koalaman/shellcheck-precommit
+  rev: v0.9.0
+  hooks:
+    - id: shellcheck
+- repo: https://github.com/mvdan/sh
+  rev: v3.9.0
+  hooks:
+    - id: shfmt
+      args: ["-i", "2", "-s", "-ci"]
+- repo: https://github.com/gitleaks/gitleaks
+  rev: v8.18.0
+  hooks:
+    - id: gitleaks
+      args: ["protect", "--staged"]
 ```
 
 ---
@@ -749,83 +805,25 @@ For questions or issues, consult the [SETTINGS.md](docs/SETTINGS.md) documentati
 ### File: `configs/desktop/aerospace.toml`
 
 ```
-start-at-login = true
-[gaps]
-inner.horizontal = 8
-inner.vertical = 8
-outer.top = 8
-outer.bottom = 8
-outer.left = 8
-outer.right = 24
-[mode.main.binding]
-alt-h = "focus left"
-alt-j = "focus down"
-alt-k = "focus up"
-alt-l = "focus right"
-alt-shift-h = "move left"
-alt-shift-j = "move down"
-alt-shift-k = "move up"
-alt-shift-l = "move right"
-alt-1 = "workspace 1"
-alt-2 = "workspace 2"
-alt-3 = "workspace 3"
-alt-4 = "workspace 4"
-alt-5 = "workspace 5"
-alt-6 = "workspace 6"
-alt-7 = "workspace 7"
-alt-8 = "workspace 8"
-alt-9 = "workspace 9"
-alt-shift-1 = "move-node-to-workspace 1"
-alt-shift-2 = "move-node-to-workspace 2"
-alt-shift-3 = "move-node-to-workspace 3"
-alt-shift-4 = "move-node-to-workspace 4"
-alt-shift-5 = "move-node-to-workspace 5"
-alt-shift-6 = "move-node-to-workspace 6"
-alt-shift-7 = "move-node-to-workspace 7"
-alt-shift-8 = "move-node-to-workspace 8"
-alt-shift-9 = "move-node-to-workspace 9"
-alt-enter = "exec-and-forget open -na 'Ghostty'"
-alt-b = "layout horizontal"
-alt-slash = "layout vertical"
-alt-comma = "layout accordion"
-alt-f = "fullscreen"
-alt-space = "mode apps"
-alt-x = "exec-and-forget sketchybar --trigger aerospace_workspace_change"
-[mode.apps.binding]
-w = "exec-and-forget open -na 'WezTerm'"
-t = "exec-and-forget open -na 'Ghostty'"
-c = "exec-and-forget open -na 'Visual Studio Code'"
-s = "exec-and-forget open -a 'Safari'"
-o = "exec-and-forget open -a 'Obsidian'"
-r = "exec-and-forget open -a 'Raycast'"
-m = "exec-and-forget open -a 'Maccy'"
-q = "mode main"
-[workspace-to-monitor-force-assignment]
-1 = 1
-2 = 1
-3 = 1
-4 = 1
-5 = 1
-6 = 1
-7 = 1
-8 = 1
-9 = 1
-```
-
----
-
-
-### File: `configs/desktop/aerospace_enhanced.toml`
-
-```
-# AeroSpace Enhanced Configuration
-# Optimized for automatic workspace layouts with startup scripts
+# AeroSpace Configuration
+# Unified configuration with workspace automation support
 
 start-at-login = true
 
-# Enable window animations for smoother transitions
+# Enable normalization for better container handling
 enable-normalization-flatten-containers = true
 enable-normalization-opposite-orientation-for-nested-containers = true
+
+# Default layouts
+default-root-container-layout = 'tiles'
+default-root-container-orientation = 'auto'
+accordion-padding = 30
+
+# Startup commands - initialize borders and sketchybar
+after-startup-command = [
+  'exec-and-forget borders active_color=0xff89b4fa inactive_color=0xff45475a width=5.0',
+  'exec-and-forget sketchybar --trigger aerospace_workspace_change'
+]
 
 # Gaps configuration
 [gaps]
@@ -836,20 +834,7 @@ outer.bottom = 8
 outer.left = 8
 outer.right = 24
 
-# Default layouts
-default-root-container-layout = 'tiles'
-default-root-container-orientation = 'auto'
-
-# Accordion padding (0 to disable)
-accordion-padding = 30
-
-# Automatically execute layout initialization after startup
-after-startup-command = [
-    'exec-and-forget borders active_color=0xff89b4fa inactive_color=0xff45475a width=5.0',
-    'exec-and-forget sketchybar --trigger aerospace_workspace_change'
-]
-
-# Window detection rules - automatically place apps in designated workspaces
+# Window detection rules - automatically place apps
 [[on-window-detected]]
 if.app-id = 'com.mitchellh.ghostty'
 check-further-callbacks = true
@@ -912,19 +897,13 @@ alt-slash = 'layout v_tiles h_tiles'
 alt-comma = 'layout h_accordion v_accordion'
 alt-f = 'fullscreen'
 
-# Resize mode
+# Mode switches
 alt-r = 'mode resize'
-
-# Apps mode
 alt-space = 'mode apps'
-
-# Layout initialization mode
 alt-i = 'mode layout-init'
 
-# Sketchybar integration
+# Utility commands
 alt-x = 'exec-and-forget sketchybar --trigger aerospace_workspace_change'
-
-# Screenshot with custom shortcut
 alt-shift-s = 'exec-and-forget screencapture -i -c'
 
 # Apps mode - quick application launcher
@@ -1132,6 +1111,106 @@ Potential improvements:
 ---
 
 
+### File: `configs/desktop/aerospace_scripts/common.sh`
+
+```
+#!/usr/bin/env bash
+# Common functions for AeroSpace workspace scripts
+# Source this at the top of each init_workspace_*.sh script
+
+set -euo pipefail
+
+# Guard: ensure command is available
+guard() {
+  command -v "$1" >/dev/null || {
+    echo "Error: $1 not found. Install it first."
+    exit 1
+  }
+}
+
+# Verify required commands
+guard aerospace
+guard open
+
+# Autonomy slider: 0=plan-only (safe default), 1=execute
+ALPHA="${AUTONOMY:-0}"
+
+# Plan: show what would be executed
+plan() {
+  echo "[PLAN] $*"
+}
+
+# Act: execute if AUTONOMY >= 1, otherwise plan
+act() {
+  if [ "$ALPHA" -ge 1 ]; then
+    eval "$@"
+  else
+    plan "$@"
+  fi
+}
+
+# Wait for condition to become true (with timeout)
+# Usage: wait_until "command that returns 0 when ready" timeout_seconds
+wait_until() {
+  local cmd="$1"
+  local timeout="${2:-10}"
+  local elapsed=0
+
+  while [ $elapsed -lt $timeout ]; do
+    if eval "$cmd" >/dev/null 2>&1; then
+      return 0
+    fi
+    sleep 1
+    elapsed=$((elapsed + 1))
+  done
+
+  echo "Warning: Timeout waiting for: $cmd"
+  return 1
+}
+
+# Get current window count for an app in a workspace
+# Usage: get_window_count workspace app_id
+get_window_count() {
+  local workspace="$1"
+  local app_id="$2"
+  aerospace list-windows --workspace "$workspace" --app-id "$app_id" 2>/dev/null | wc -l | tr -d ' '
+}
+
+# Open app instances until target count is reached (idempotent)
+# Usage: open_until_count workspace app_name app_id target_count
+open_until_count() {
+  local workspace="$1"
+  local app_name="$2"
+  local app_id="$3"
+  local target="$4"
+
+  local have
+  have=$(get_window_count "$workspace" "$app_id")
+  local need=$((target - have))
+
+  if [ "$need" -le 0 ]; then
+    echo "Already have $have/$target $app_name windows in workspace $workspace"
+    return 0
+  fi
+
+  echo "Opening $need $app_name window(s) to reach target $target..."
+  for _ in $(seq 1 "$need"); do
+    act "open -na \"$app_name\""
+    sleep 0.3
+  done
+
+  # Wait for windows to appear
+  wait_until "[ \$(get_window_count $workspace $app_id) -ge $target ]" 15 ||
+    echo "Warning: May not have reached target count"
+}
+
+# Export functions so they're available to scripts
+export -f guard plan act wait_until get_window_count open_until_count
+```
+
+---
+
+
 ### File: `configs/desktop/aerospace_scripts/init_all_workspaces.sh`
 
 ```
@@ -1147,25 +1226,47 @@ echo "AeroSpace Workspace Initialization"
 echo "=========================================="
 echo ""
 
+# Pass through AUTONOMY environment variable
+export AUTONOMY="${AUTONOMY:-0}"
+
+if [ "$AUTONOMY" -eq 0 ]; then
+  echo "Running in PLAN mode (AUTONOMY=0)"
+  echo "Set AUTONOMY=1 to execute changes"
+  echo ""
+fi
+
 # Array of workspace scripts to run
 WORKSPACES=(1 2 3 4 5 6 7)
 
 for ws in "${WORKSPACES[@]}"; do
-    echo ""
-    echo ">>> Initializing Workspace ${ws}..."
-    if [ -f "${SCRIPT_DIR}/init_workspace_${ws}.sh" ]; then
-        bash "${SCRIPT_DIR}/init_workspace_${ws}.sh"
-        echo "    ✓ Workspace ${ws} initialized"
-        # Small delay between workspaces
-        sleep 2
-    else
-        echo "    ✗ Script not found for workspace ${ws}"
-    fi
+  script_path="${SCRIPT_DIR}/init_workspace_${ws}.sh"
+
+  echo ""
+  echo ">>> Initializing Workspace ${ws}..."
+
+  if [ ! -x "$script_path" ]; then
+    echo "    ✗ Script not found or not executable: $script_path"
+    continue
+  fi
+
+  # Run script and handle failures gracefully
+  if AUTONOMY="$AUTONOMY" bash "$script_path"; then
+    echo "    ✓ Workspace ${ws} initialized"
+  else
+    echo "    ✗ Workspace ${ws} failed (continuing anyway)"
+  fi
+
+  # Small delay between workspaces to avoid race conditions
+  [ "$AUTONOMY" -ge 1 ] && sleep 2 || true
 done
 
 echo ""
 echo "=========================================="
-echo "All workspaces initialized!"
+if [ "$AUTONOMY" -eq 0 ]; then
+  echo "Planning complete! Run with AUTONOMY=1 to execute."
+else
+  echo "All workspaces initialized!"
+fi
 echo "Workspace 8 left empty for flexible use"
 echo "=========================================="
 echo ""
@@ -1192,69 +1293,69 @@ echo "Use Alt+i then 'a' to re-run this script"
 #!/usr/bin/env bash
 # Workspace 1: Terminal Grid (6 Ghostty terminals in 3×2 grid)
 
-set -euo pipefail
+# Source common functions
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=./common.sh
+source "$SCRIPT_DIR/common.sh"
 
 WORKSPACE=1
+TARGET_COUNT=6
 
-echo "Initializing Workspace ${WORKSPACE}: Terminal Grid (6 terminals)"
+echo "Initializing Workspace ${WORKSPACE}: Terminal Grid (${TARGET_COUNT} terminals)"
 
 # Switch to workspace
-aerospace workspace ${WORKSPACE}
+aerospace workspace "$WORKSPACE"
 
 # Flatten any existing layout
-aerospace flatten-workspace-tree
+act "aerospace flatten-workspace-tree"
 
-# Open 6 Ghostty terminals
-for i in {1..6}; do
-    open -na "Ghostty"
-    sleep 0.5
-done
+# Open Ghostty terminals until we have the target count (idempotent)
+open_until_count "$WORKSPACE" "Ghostty" "com.mitchellh.ghostty" "$TARGET_COUNT"
 
-# Wait for windows to open
-sleep 2
+# Wait for all windows to be ready
+sleep 1
 
 # Get all Ghostty window IDs in this workspace
-WINDOW_IDS=($(aerospace list-windows --workspace ${WORKSPACE} --app-id com.mitchellh.ghostty | awk '{print $1}'))
+WINDOW_IDS=($(aerospace list-windows --workspace "$WORKSPACE" --app-id com.mitchellh.ghostty | awk '{print $1}'))
 
-if [ ${#WINDOW_IDS[@]} -lt 6 ]; then
-    echo "Warning: Expected 6 windows, found ${#WINDOW_IDS[@]}"
+WINDOW_COUNT=${#WINDOW_IDS[@]}
+echo "Found $WINDOW_COUNT Ghostty windows in workspace $WORKSPACE"
+
+if [ "$WINDOW_COUNT" -lt "$TARGET_COUNT" ]; then
+  echo "Warning: Expected $TARGET_COUNT windows, found $WINDOW_COUNT"
 fi
 
-# Focus first window
-aerospace focus --window-id ${WINDOW_IDS[0]} 2>/dev/null || true
+# Only arrange if we're in act mode and have windows
+if [ "$ALPHA" -ge 1 ] && [ "$WINDOW_COUNT" -ge 3 ]; then
+  # Focus first window
+  aerospace focus --window-id "${WINDOW_IDS[0]}" 2>/dev/null || true
 
-# Set to horizontal tiles layout for the root
-aerospace layout h_tiles
+  # Set to horizontal tiles layout for the root
+  aerospace layout h_tiles
 
-# Create 3×2 grid structure
-# Row 1: 3 windows side by side
-# Row 2: 3 windows side by side
+  # Create 3×2 grid structure
+  # Row 1: 3 windows side by side (default horizontal layout)
+  # Row 2: 3 windows side by side (need to arrange)
 
-# Focus and arrange first 3 windows in top row (already horizontal)
-# Windows are already being added horizontally, so first 3 are in a row
-
-# Now we need to create the second row
-# Focus the 4th window and create a new row below
-if [ ${#WINDOW_IDS[@]} -ge 4 ]; then
-    aerospace focus --window-id ${WINDOW_IDS[3]}
-    # Join with first window to create proper tiling
-    aerospace move left
+  if [ "$WINDOW_COUNT" -ge 4 ]; then
+    aerospace focus --window-id "${WINDOW_IDS[3]}"
+    aerospace move left 2>/dev/null || true
     aerospace move down 2>/dev/null || true
-fi
+  fi
 
-# Arrange remaining windows
-if [ ${#WINDOW_IDS[@]} -ge 5 ]; then
-    aerospace focus --window-id ${WINDOW_IDS[4]}
-    aerospace move right
-fi
+  if [ "$WINDOW_COUNT" -ge 5 ]; then
+    aerospace focus --window-id "${WINDOW_IDS[4]}"
+    aerospace move right 2>/dev/null || true
+  fi
 
-if [ ${#WINDOW_IDS[@]} -ge 6 ]; then
-    aerospace focus --window-id ${WINDOW_IDS[5]}
-    aerospace move right
-fi
+  if [ "$WINDOW_COUNT" -ge 6 ]; then
+    aerospace focus --window-id "${WINDOW_IDS[5]}"
+    aerospace move right 2>/dev/null || true
+  fi
 
-# Balance the layout
-aerospace balance-sizes
+  # Balance the layout
+  aerospace balance-sizes
+fi
 
 echo "Workspace ${WORKSPACE} initialized successfully"
 ```
@@ -1843,18 +1944,6 @@ echo "Run 'Alt+i then ${CURRENT_WS}' to reinitialize this workspace"
 ---
 
 
-### File: `configs/editor/nvim_community.lua`
-
-```
-return {
-  "AstroNvim/astrocommunity",
-  { import = "astrocommunity.colorscheme.catppuccin" },
-}
-```
-
----
-
-
 ### File: `configs/editor/nvim_init.lua`
 
 ```
@@ -1865,51 +1954,6 @@ return {
     {"epwalsh/obsidian.nvim", version="*"}
   },
   options = { opt = { number = true, relativenumber = true } }
-}
-```
-
----
-
-
-### File: `configs/editor/nvim_user_plugins.lua`
-
-```
-return {
-  {
-    "catppuccin/nvim",
-    name = "catppuccin",
-    opts = {
-      flavour = "mocha",
-      integrations = {
-        cmp = true,
-        gitsigns = true,
-        nvimtree = true,
-        treesitter = true,
-        telescope = true,
-        notify = true,
-        mini = true,
-      }
-    }
-  },
-  {
-    "AstroNvim/astrocore",
-    ---@type AstroCoreOpts
-    opts = {
-      options = {
-        opt = {
-          number = true,
-          relativenumber = true,
-        },
-      },
-    },
-  },
-  {
-    "AstroNvim/astroui",
-    ---@type AstroUIOpts
-    opts = {
-      colorscheme = "catppuccin-mocha",
-    },
-  },
 }
 ```
 
@@ -2061,8 +2105,12 @@ run '~/.tmux/plugins/tpm/tpm'
 ### File: `configs/shell/zshrc`
 
 ```
-export OPENROUTER_API_KEY="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"
+# Load secrets from macOS Keychain when needed
+# To set: security add-generic-password -a "$USER" -s OPENROUTER_API_KEY -w '<YOUR-KEY>' -U
+export OPENROUTER_API_KEY="${OPENROUTER_API_KEY:-$(security find-generic-password -w -s OPENROUTER_API_KEY 2>/dev/null || true)}"
 
+# Autonomy slider for scripts: 0=plan-only (safe), 1=full-act
+export AUTONOMY="${AUTONOMY:-0}"
 
 # Added by Windsurf
 export PATH="/Users/p8/.codeium/windsurf/bin:$PATH"
@@ -2081,6 +2129,7 @@ eval "$(starship init zsh)"
 bindkey -v
 export FZF_DEFAULT_COMMAND='fd --type f --hidden --follow --exclude .git'
 export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+export FZF_DEFAULT_OPTS="--height 40% --layout=reverse --border --color=bg+:#313244,bg:#1e1e2e,spinner:#f5e0dc,hl:#f38ba8 --color=fg:#cdd6f4,header:#f38ba8,info:#cba6f7,pointer:#f5e0dc --color=marker:#f5e0dc,fg+:#cdd6f4,prompt:#cba6f7,hl+:#f38ba8"
 eval "$(fzf --zsh)"
 eval "$(carapace _carapace zsh)"
 eval "$(direnv hook zsh)"
@@ -2091,6 +2140,162 @@ alias cat='bat'
 alias grep='rg'
 
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+```
+
+---
+
+
+### File: `docs/ADRs/0001-witness-and-barriers.md`
+
+```
+# ADR 0001: Witness Discipline and Safety Barriers
+
+**Status:** Accepted
+**Date:** 2025-10-15
+**Author:** System Architecture Review
+
+## Context
+
+The mac_dev_setup repository automates macOS development environment configuration with powerful scripts that modify system state, install packages, and configure services. Without proper guardrails, these operations pose risks:
+
+1. **Non-idempotent operations** creating duplicate windows/services
+2. **Missing verification gates** allowing bad configs to ship
+3. **Destructive changes** without dry-run or approval steps
+4. **Secret leakage** through hardcoded credentials
+
+## Decision
+
+We adopt **witness discipline** and **safety barriers** as core architectural principles:
+
+### 1. Witness Discipline
+
+**Every change must carry proof it was verified:**
+
+- **Pre-commit hooks** run linters (shellcheck, shfmt) and secret scanners (gitleaks)
+- **CI pipeline** blocks merges on verification failures
+- **Code review** requires explicit approval for high-impact changes
+
+**Witnesses:**
+- Static analysis (shellcheck, yaml-lint)
+- Secret scanning (gitleaks)
+- Format checking (shfmt)
+- Manual review for system-modifying scripts
+
+### 2. Safety Barriers
+
+**Operations are gated by autonomy levels:**
+
+```bash
+AUTONOMY=0  # plan-only (default) - prints what would be done
+AUTONOMY=1  # full-act - executes changes
+```
+
+**Barrier implementation:**
+```bash
+act() { [ "$AUTONOMY" -ge 1 ] && eval "$@" || echo "[PLAN] $@"; }
+```
+
+**Applied to:**
+- Workspace initialization scripts
+- System installers
+- Service configuration
+- LaunchAgent setup
+
+### 3. Idempotency
+
+**Scripts must be safe to re-run:**
+
+- Check current state before acting
+- Only create/modify missing resources
+- Use readiness checks instead of sleeps
+- Guard against race conditions
+
+**Example:**
+```bash
+# Before: always opens 6 windows (duplicates on re-run)
+for i in {1..6}; do open -na "Ghostty"; done
+
+# After: only opens missing windows
+target=6
+have=$(aerospace list-windows ... | wc -l)
+need=$((target - have))
+for _ in $(seq 1 $need); do act 'open -na "Ghostty"'; done
+```
+
+### 4. Two-Handed Commits
+
+**High-impact changes require explicit approval:**
+
+- System configuration changes
+- LaunchAgent installation
+- Brew package installation
+- File operations outside user directories
+
+**Implemented via:**
+- `DRYRUN=1` mode for installers
+- Interactive prompts for destructive ops
+- CI verification before merge
+
+## Consequences
+
+### Positive
+
+✅ **Safer automation** - default to dry-run prevents accidents
+✅ **Better quality** - linters catch bugs before commit
+✅ **No secret leaks** - gitleaks blocks hardcoded credentials
+✅ **Reproducible** - idempotent scripts can be re-run safely
+✅ **Observable** - plan mode shows what would change
+
+### Negative
+
+⚠️ **Extra setup** - contributors must install pre-commit
+⚠️ **Slower commits** - verification adds 2-3 seconds
+⚠️ **Learning curve** - AUTONOMY slider requires documentation
+
+### Mitigation
+
+- Document setup in README
+- Keep checks fast (< 5 seconds)
+- Provide clear error messages
+- Default to safe modes (AUTONOMY=0, DRYRUN=1)
+
+## Implementation
+
+### Phase 1: Verification (Complete)
+- [x] Add .pre-commit-config.yaml
+- [x] Create GitHub Actions workflow
+- [x] Update .githooks/pre-commit to fail on errors
+
+### Phase 2: Barriers (In Progress)
+- [ ] Add AUTONOMY slider to workspace scripts
+- [ ] Add DRYRUN mode to install.sh
+- [ ] Make all scripts idempotent
+
+### Phase 3: Documentation (Pending)
+- [ ] Update README with new patterns
+- [ ] Document AUTONOMY and DRYRUN usage
+- [ ] Add troubleshooting for verification failures
+
+## Invariants
+
+These must hold at all times:
+
+1. **No secrets in git** - verified by gitleaks pre-commit hook
+2. **All shell scripts pass shellcheck** - enforced by CI
+3. **Default to safe** - AUTONOMY=0, DRYRUN=1 by default
+4. **Idempotent scripts** - safe to run multiple times
+5. **Typed interfaces** - scripts accept --help, --dry-run flags
+
+## References
+
+- [Pre-commit framework](https://pre-commit.com/)
+- [ShellCheck documentation](https://www.shellcheck.net/)
+- [Gitleaks secret scanning](https://github.com/gitleaks/gitleaks)
+- [Idempotency in automation](https://en.wikipedia.org/wiki/Idempotence)
+
+## Revision History
+
+- 2025-10-15: Initial ADR defining witness discipline and barriers
 ```
 
 ---
@@ -4494,6 +4699,169 @@ osascript -e 'tell application "System Events" to log out'
 ---
 
 
+### File: `docs/SECURITY.md`
+
+```
+# Security Guide
+
+## Secret Management
+
+**Never commit secrets to git.** This repository uses secure secret management:
+
+### API Keys and Credentials
+
+Secrets are stored in macOS Keychain, not in files:
+
+```bash
+# Store a secret
+security add-generic-password -a "$USER" -s SECRET_NAME -w 'secret-value' -U
+
+# Retrieve in shell (automatic via .zshrc)
+export API_KEY="${API_KEY:-$(security find-generic-password -w -s API_KEY 2>/dev/null || true)}"
+```
+
+### Rotating Leaked Secrets
+
+If a secret was committed:
+
+1. **Rotate immediately** - invalidate the old secret
+2. **Purge from history**:
+   ```bash
+   # Option 1: BFG Repo-Cleaner (recommended)
+   bfg --replace-text secrets.txt repo.git
+
+   # Option 2: git-filter-repo
+   git filter-repo --path configs/shell/zshrc --invert-paths
+   ```
+3. **Force push** (coordinate with team):
+   ```bash
+   git push --force-with-lease
+   ```
+4. **Notify** affected systems/users
+
+### Pre-commit Secret Scanning
+
+Gitleaks runs automatically on every commit:
+
+```bash
+# Manual scan
+just verify
+
+# Or directly
+pre-commit run gitleaks --all-files
+```
+
+**Blocked patterns:**
+- API keys (OpenAI, AWS, etc.)
+- Private keys (SSH, PGP)
+- Passwords and tokens
+- Connection strings with credentials
+
+### Emergency: Bypass for False Positives
+
+```bash
+# Skip pre-commit hooks (use sparingly)
+git commit --no-verify -m "message"
+```
+
+## Safe Defaults
+
+### AUTONOMY Slider
+
+Scripts default to plan-only mode:
+
+```bash
+# Safe: shows what would happen
+AUTONOMY=0 just init-workspaces
+
+# Execute changes
+AUTONOMY=1 just init-workspaces
+```
+
+### DRYRUN Mode
+
+Installers default to dry-run:
+
+```bash
+# Safe: shows what would be installed
+DRYRUN=1 just install
+
+# Execute installation
+DRYRUN=0 just install
+```
+
+## Verification Gates
+
+### Pre-commit Checks
+
+Every commit is verified:
+
+- ✅ ShellCheck (shell script linting)
+- ✅ shfmt (shell formatting)
+- ✅ Gitleaks (secret scanning)
+- ✅ Trailing whitespace/EOF fixes
+
+### CI Pipeline
+
+Pull requests are blocked until:
+
+- ✅ All pre-commit hooks pass
+- ✅ No secrets detected
+- ✅ Shell scripts pass linting
+
+## Reporting Security Issues
+
+**Do not** open public issues for security vulnerabilities.
+
+Instead:
+1. Rotate affected secrets immediately
+2. Contact maintainer privately
+3. Allow time for fix before disclosure
+
+## Best Practices
+
+1. **Never hardcode secrets** - use environment variables or Keychain
+2. **Use DRYRUN/AUTONOMY=0** for testing scripts
+3. **Review diffs** before committing (`git diff --cached`)
+4. **Enable pre-commit hooks** (`just hooks`)
+5. **Rotate secrets periodically** (every 90 days)
+6. **Audit access** to systems using these configs
+
+## Threat Model
+
+### In Scope
+
+- ✅ Secret leakage via git commits
+- ✅ Destructive automation without approval
+- ✅ Malicious code injection via scripts
+- ✅ Privilege escalation via LaunchAgents
+
+### Out of Scope
+
+- ⚠️ Physical access to unlocked machine
+- ⚠️ Compromised package managers (brew, npm)
+- ⚠️ OS-level vulnerabilities
+- ⚠️ Supply chain attacks on dependencies
+
+## Incident Response
+
+If secrets are exposed:
+
+1. **Contain**: Rotate all affected secrets immediately
+2. **Assess**: Determine scope of exposure
+3. **Remediate**: Purge from git history, update systems
+4. **Document**: Record in incident log
+5. **Prevent**: Add to gitleaks config if pattern missed
+
+---
+
+**Last Updated:** 2025-10-15
+**Security Contact:** See README for maintainer contact
+```
+
+---
+
+
 ### File: `docs/SETTINGS.md`
 
 ```
@@ -4973,6 +5341,64 @@ docker system prune -a
 ---
 
 
+### File: `justfile`
+
+```
+default: help
+
+set shell := ["bash", "-euo", "pipefail", "-c"]
+
+# Show available commands
+help:
+    @just --list
+
+# Install development environment (DRYRUN=1 for plan-only, DRYRUN=0 to execute)
+install DRYRUN="1":
+    DRYRUN={{DRYRUN}} scripts/install.sh
+
+# Setup AeroSpace workspace automation (AUTONOMY=0 for plan, AUTONOMY=1 to execute)
+aero AUTONOMY="0":
+    AUTONOMY={{AUTONOMY}} scripts/setup_aerospace_automation.sh
+
+# Setup git hooks for automatic verification
+hooks:
+    scripts/setup_git_hooks.sh
+
+# Run all verification checks (linters, secret scanning, etc.)
+verify:
+    pre-commit run --all-files
+
+# Generate directory context for LLMs
+context:
+    scripts/generate_context.sh
+
+# Initialize all AeroSpace workspaces (AUTONOMY=0 for plan, AUTONOMY=1 to execute)
+init-workspaces AUTONOMY="0":
+    AUTONOMY={{AUTONOMY}} ~/.config/aerospace/scripts/init_all_workspaces.sh
+
+# Initialize specific workspace (AUTONOMY=0 for plan, AUTONOMY=1 to execute)
+init-workspace WS AUTONOMY="0":
+    AUTONOMY={{AUTONOMY}} ~/.config/aerospace/scripts/init_workspace_{{WS}}.sh
+
+# Format all shell scripts
+format:
+    shfmt -i 2 -s -ci -w scripts/ configs/desktop/aerospace_scripts/
+
+# Check shell scripts for errors
+lint:
+    shellcheck scripts/*.sh configs/desktop/aerospace_scripts/*.sh
+
+# Update all dependencies
+update:
+    brew update && brew upgrade && brew cleanup
+    mise upgrade
+    pipx upgrade-all
+    pre-commit autoupdate
+```
+
+---
+
+
 ### File: `scripts/install.sh`
 
 ```
@@ -4982,6 +5408,18 @@ docker system prune -a
 # Description: Complete automated setup for macOS development environment
 
 set -euo pipefail
+
+# DRYRUN mode: set DRYRUN=1 to plan without executing
+DRYRUN="${DRYRUN:-0}"
+
+# Execute command or show plan
+run() {
+  if [ "$DRYRUN" = "1" ]; then
+    echo "[PLAN] $*"
+  else
+    eval "$@"
+  fi
+}
 
 # Colors for output
 RED='\033[0;31m'
@@ -5418,13 +5856,13 @@ if [ -f "$HOME/.config/aerospace/aerospace.toml" ]; then
     print_success "Backup created"
 fi
 
-# Install enhanced AeroSpace configuration
-print_info "Installing enhanced AeroSpace configuration..."
-if [ -f "$CONFIG_DIR/desktop/aerospace_enhanced.toml" ]; then
-    cp "$CONFIG_DIR/desktop/aerospace_enhanced.toml" "$HOME/.config/aerospace/aerospace.toml"
-    print_success "Enhanced config installed"
+# Install unified AeroSpace configuration
+print_info "Installing unified AeroSpace configuration..."
+if [ -f "$CONFIG_DIR/desktop/aerospace.toml" ]; then
+    cp "$CONFIG_DIR/desktop/aerospace.toml" "$HOME/.config/aerospace/aerospace.toml"
+    print_success "Unified config installed"
 else
-    print_error "Enhanced config not found at $CONFIG_DIR/desktop/aerospace_enhanced.toml"
+    print_error "Config not found at $CONFIG_DIR/desktop/aerospace.toml"
     exit 1
 fi
 
@@ -5576,9 +6014,9 @@ echo "To re-enable: git config core.hooksPath .githooks"
 
 ## Generation Metadata
 
-- **Generated:** 2025-10-15 07:43:42
+- **Generated:** 2025-10-15 09:28:10
 - **Repository:** mac_dev_setup
-- **Files processed:** 38
+- **Files processed:** 41
 - **Generator:** scripts/generate_context.sh
 
 ---

@@ -10,25 +10,47 @@ echo "AeroSpace Workspace Initialization"
 echo "=========================================="
 echo ""
 
+# Pass through AUTONOMY environment variable
+export AUTONOMY="${AUTONOMY:-0}"
+
+if [ "$AUTONOMY" -eq 0 ]; then
+  echo "Running in PLAN mode (AUTONOMY=0)"
+  echo "Set AUTONOMY=1 to execute changes"
+  echo ""
+fi
+
 # Array of workspace scripts to run
 WORKSPACES=(1 2 3 4 5 6 7)
 
 for ws in "${WORKSPACES[@]}"; do
-    echo ""
-    echo ">>> Initializing Workspace ${ws}..."
-    if [ -f "${SCRIPT_DIR}/init_workspace_${ws}.sh" ]; then
-        bash "${SCRIPT_DIR}/init_workspace_${ws}.sh"
-        echo "    ✓ Workspace ${ws} initialized"
-        # Small delay between workspaces
-        sleep 2
-    else
-        echo "    ✗ Script not found for workspace ${ws}"
-    fi
+  script_path="${SCRIPT_DIR}/init_workspace_${ws}.sh"
+
+  echo ""
+  echo ">>> Initializing Workspace ${ws}..."
+
+  if [ ! -x "$script_path" ]; then
+    echo "    ✗ Script not found or not executable: $script_path"
+    continue
+  fi
+
+  # Run script and handle failures gracefully
+  if AUTONOMY="$AUTONOMY" bash "$script_path"; then
+    echo "    ✓ Workspace ${ws} initialized"
+  else
+    echo "    ✗ Workspace ${ws} failed (continuing anyway)"
+  fi
+
+  # Small delay between workspaces to avoid race conditions
+  [ "$AUTONOMY" -ge 1 ] && sleep 2 || true
 done
 
 echo ""
 echo "=========================================="
-echo "All workspaces initialized!"
+if [ "$AUTONOMY" -eq 0 ]; then
+  echo "Planning complete! Run with AUTONOMY=1 to execute."
+else
+  echo "All workspaces initialized!"
+fi
 echo "Workspace 8 left empty for flexible use"
 echo "=========================================="
 echo ""
