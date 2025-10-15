@@ -1,43 +1,62 @@
 #!/usr/bin/env bash
 # Workspace 4: Full Screen Safari
 
-set -euo pipefail
+# Source common functions
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=./common.sh
+source "$SCRIPT_DIR/common.sh"
 
 WORKSPACE=4
+TARGET_COUNT=1
 
 echo "Initializing Workspace ${WORKSPACE}: Full Screen Safari"
 
 # Switch to workspace
-aerospace workspace ${WORKSPACE}
+aerospace workspace "$WORKSPACE"
 
 # Flatten any existing layout
-aerospace flatten-workspace-tree
+act "aerospace flatten-workspace-tree"
 
-# Open Safari if not already open
-open -a "Safari"
+# Check if we already have Safari window
+HAVE_COUNT=$(get_window_count "$WORKSPACE" "com.apple.Safari")
 
-# Wait for window to open
-sleep 2
+if [ "$HAVE_COUNT" -lt "$TARGET_COUNT" ]; then
+  echo "Opening Safari..."
+  act "open -a \"Safari\""
 
-# Get Safari window ID
-SAFARI_IDS=($(aerospace list-windows --workspace ${WORKSPACE} --app-id com.apple.Safari | awk '{print $1}'))
+  # Wait for window to appear
+  sleep 2
 
-if [ ${#SAFARI_IDS[@]} -eq 0 ]; then
-    echo "Warning: No Safari window found, trying to open new window"
-    osascript -e 'tell application "Safari" to make new document' 2>/dev/null || true
+  HAVE_COUNT=$(get_window_count "$WORKSPACE" "com.apple.Safari")
+
+  # If still no window, try to create new document
+  if [ "$HAVE_COUNT" -eq 0 ]; then
+    echo "Trying to create new Safari window..."
+    act "osascript -e 'tell application \"Safari\" to make new document' 2>/dev/null || true"
     sleep 1
-    SAFARI_IDS=($(aerospace list-windows --workspace ${WORKSPACE} --app-id com.apple.Safari | awk '{print $1}'))
+    HAVE_COUNT=$(get_window_count "$WORKSPACE" "com.apple.Safari")
+  fi
+else
+  echo "Already have $HAVE_COUNT Safari window(s) in workspace $WORKSPACE"
 fi
 
-if [ ${#SAFARI_IDS[@]} -ge 1 ]; then
-    # Focus Safari window
-    aerospace focus --window-id ${SAFARI_IDS[0]}
+# Get Safari window IDs
+SAFARI_IDS=($(aerospace list-windows --workspace "$WORKSPACE" --app-id com.apple.Safari | awk '{print $1}'))
+SAFARI_COUNT=${#SAFARI_IDS[@]}
 
-    # Set to fullscreen
-    aerospace fullscreen on
+echo "Found $SAFARI_COUNT Safari window(s)"
 
-    echo "Workspace ${WORKSPACE} initialized successfully"
+# Only arrange if we're in act mode and have a window
+if [ "$ALPHA" -ge 1 ] && [ "$SAFARI_COUNT" -ge 1 ]; then
+  # Focus Safari window
+  aerospace focus --window-id "${SAFARI_IDS[0]}"
+
+  # Set to fullscreen
+  aerospace fullscreen on
+
+  echo "Workspace ${WORKSPACE} initialized successfully"
+elif [ "$SAFARI_COUNT" -eq 0 ]; then
+  echo "Warning: Could not initialize Safari window"
 else
-    echo "Error: Could not initialize Safari window"
-    exit 1
+  echo "Workspace ${WORKSPACE} initialized successfully (plan mode)"
 fi

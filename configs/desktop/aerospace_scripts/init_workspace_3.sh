@@ -1,72 +1,83 @@
 #!/usr/bin/env bash
 # Workspace 3: Mixed Layout (2 narrow Ghostty terminals + 2 Chrome windows in center)
 
-set -euo pipefail
+# Source common functions
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=./common.sh
+source "$SCRIPT_DIR/common.sh"
 
 WORKSPACE=3
+TARGET_GHOSTTY=2
+TARGET_CHROME=2
 
-echo "Initializing Workspace ${WORKSPACE}: Mixed Layout (2 Ghostty + 2 Chrome)"
+echo "Initializing Workspace ${WORKSPACE}: Mixed Layout (${TARGET_GHOSTTY} Ghostty + ${TARGET_CHROME} Chrome)"
 
 # Switch to workspace
-aerospace workspace ${WORKSPACE}
+aerospace workspace "$WORKSPACE"
 
 # Flatten any existing layout
-aerospace flatten-workspace-tree
+act "aerospace flatten-workspace-tree"
 
-# Open 2 Ghostty terminals (narrower terminals for sides)
-for i in {1..2}; do
-    open -na "Ghostty"
-    sleep 0.5
-done
+# Open Ghostty terminals until we have the target count (idempotent)
+open_until_count "$WORKSPACE" "Ghostty" "com.mitchellh.ghostty" "$TARGET_GHOSTTY"
 
-# Open 2 Chrome windows
-for i in {1..2}; do
-    open -na "Google Chrome" --args --new-window
-    sleep 0.5
-done
+# Open Chrome windows until we have the target count (idempotent)
+open_until_count "$WORKSPACE" "Google Chrome" "com.google.Chrome" "$TARGET_CHROME"
 
-# Wait for windows to open
-sleep 2
+# Wait for all windows to be ready
+sleep 1
 
 # Get window IDs
-GHOSTTY_IDS=($(aerospace list-windows --workspace ${WORKSPACE} --app-id com.mitchellh.ghostty | awk '{print $1}'))
-CHROME_IDS=($(aerospace list-windows --workspace ${WORKSPACE} --app-id com.google.Chrome | awk '{print $1}'))
+GHOSTTY_IDS=($(aerospace list-windows --workspace "$WORKSPACE" --app-id com.mitchellh.ghostty | awk '{print $1}'))
+CHROME_IDS=($(aerospace list-windows --workspace "$WORKSPACE" --app-id com.google.Chrome | awk '{print $1}'))
 
-echo "Found ${#GHOSTTY_IDS[@]} Ghostty windows and ${#CHROME_IDS[@]} Chrome windows"
+GHOSTTY_COUNT=${#GHOSTTY_IDS[@]}
+CHROME_COUNT=${#CHROME_IDS[@]}
+echo "Found $GHOSTTY_COUNT Ghostty windows and $CHROME_COUNT Chrome windows"
 
-# Set horizontal layout
-aerospace layout h_tiles
-
-# Arrange: Ghostty | Chrome | Chrome | Ghostty
-# Focus and arrange windows
-if [ ${#GHOSTTY_IDS[@]} -ge 1 ]; then
-    aerospace focus --window-id ${GHOSTTY_IDS[0]}
+if [ "$GHOSTTY_COUNT" -lt "$TARGET_GHOSTTY" ]; then
+  echo "Warning: Expected $TARGET_GHOSTTY Ghostty windows, found $GHOSTTY_COUNT"
 fi
 
-if [ ${#CHROME_IDS[@]} -ge 1 ]; then
-    aerospace focus --window-id ${CHROME_IDS[0]}
-    aerospace move right
+if [ "$CHROME_COUNT" -lt "$TARGET_CHROME" ]; then
+  echo "Warning: Expected $TARGET_CHROME Chrome windows, found $CHROME_COUNT"
 fi
 
-if [ ${#CHROME_IDS[@]} -ge 2 ]; then
-    aerospace focus --window-id ${CHROME_IDS[1]}
-    aerospace move right
-fi
+# Only arrange if we're in act mode and have windows
+if [ "$ALPHA" -ge 1 ] && [ "$GHOSTTY_COUNT" -ge 1 ] && [ "$CHROME_COUNT" -ge 1 ]; then
+  # Set horizontal layout
+  aerospace layout h_tiles
 
-if [ ${#GHOSTTY_IDS[@]} -ge 2 ]; then
-    aerospace focus --window-id ${GHOSTTY_IDS[1]}
-    aerospace move right
-fi
+  # Arrange: Ghostty | Chrome | Chrome | Ghostty
+  if [ "$GHOSTTY_COUNT" -ge 1 ]; then
+    aerospace focus --window-id "${GHOSTTY_IDS[0]}"
+  fi
 
-# Resize terminals to be narrower (20% each) and Chrome wider (30% each)
-if [ ${#GHOSTTY_IDS[@]} -ge 1 ]; then
-    aerospace focus --window-id ${GHOSTTY_IDS[0]}
-    aerospace resize width -200
-fi
+  if [ "$CHROME_COUNT" -ge 1 ]; then
+    aerospace focus --window-id "${CHROME_IDS[0]}"
+    aerospace move right 2>/dev/null || true
+  fi
 
-if [ ${#GHOSTTY_IDS[@]} -ge 2 ]; then
-    aerospace focus --window-id ${GHOSTTY_IDS[1]}
-    aerospace resize width -200
+  if [ "$CHROME_COUNT" -ge 2 ]; then
+    aerospace focus --window-id "${CHROME_IDS[1]}"
+    aerospace move right 2>/dev/null || true
+  fi
+
+  if [ "$GHOSTTY_COUNT" -ge 2 ]; then
+    aerospace focus --window-id "${GHOSTTY_IDS[1]}"
+    aerospace move right 2>/dev/null || true
+  fi
+
+  # Resize terminals to be narrower (20% each) and Chrome wider (30% each)
+  if [ "$GHOSTTY_COUNT" -ge 1 ]; then
+    aerospace focus --window-id "${GHOSTTY_IDS[0]}"
+    aerospace resize width -200 2>/dev/null || true
+  fi
+
+  if [ "$GHOSTTY_COUNT" -ge 2 ]; then
+    aerospace focus --window-id "${GHOSTTY_IDS[1]}"
+    aerospace resize width -200 2>/dev/null || true
+  fi
 fi
 
 echo "Workspace ${WORKSPACE} initialized successfully"

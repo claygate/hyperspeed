@@ -1367,59 +1367,69 @@ echo "Workspace ${WORKSPACE} initialized successfully"
 #!/usr/bin/env bash
 # Workspace 2: Second Terminal Grid (6 Ghostty terminals in 3×2 grid)
 
-set -euo pipefail
+# Source common functions
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=./common.sh
+source "$SCRIPT_DIR/common.sh"
 
 WORKSPACE=2
+TARGET_COUNT=6
 
-echo "Initializing Workspace ${WORKSPACE}: Second Terminal Grid (6 terminals)"
+echo "Initializing Workspace ${WORKSPACE}: Second Terminal Grid (${TARGET_COUNT} terminals)"
 
 # Switch to workspace
-aerospace workspace ${WORKSPACE}
+aerospace workspace "$WORKSPACE"
 
 # Flatten any existing layout
-aerospace flatten-workspace-tree
+act "aerospace flatten-workspace-tree"
 
-# Open 6 Ghostty terminals
-for i in {1..6}; do
-    open -na "Ghostty"
-    sleep 0.5
-done
+# Open Ghostty terminals until we have the target count (idempotent)
+open_until_count "$WORKSPACE" "Ghostty" "com.mitchellh.ghostty" "$TARGET_COUNT"
 
-# Wait for windows to open
-sleep 2
+# Wait for all windows to be ready
+sleep 1
 
 # Get all Ghostty window IDs in this workspace
-WINDOW_IDS=($(aerospace list-windows --workspace ${WORKSPACE} --app-id com.mitchellh.ghostty | awk '{print $1}'))
+WINDOW_IDS=($(aerospace list-windows --workspace "$WORKSPACE" --app-id com.mitchellh.ghostty | awk '{print $1}'))
 
-if [ ${#WINDOW_IDS[@]} -lt 6 ]; then
-    echo "Warning: Expected 6 windows, found ${#WINDOW_IDS[@]}"
+WINDOW_COUNT=${#WINDOW_IDS[@]}
+echo "Found $WINDOW_COUNT Ghostty windows in workspace $WORKSPACE"
+
+if [ "$WINDOW_COUNT" -lt "$TARGET_COUNT" ]; then
+  echo "Warning: Expected $TARGET_COUNT windows, found $WINDOW_COUNT"
 fi
 
-# Focus first window
-aerospace focus --window-id ${WINDOW_IDS[0]} 2>/dev/null || true
+# Only arrange if we're in act mode and have windows
+if [ "$ALPHA" -ge 1 ] && [ "$WINDOW_COUNT" -ge 3 ]; then
+  # Focus first window
+  aerospace focus --window-id "${WINDOW_IDS[0]}" 2>/dev/null || true
 
-# Set to horizontal tiles layout
-aerospace layout h_tiles
+  # Set to horizontal tiles layout for the root
+  aerospace layout h_tiles
 
-# Create 3×2 grid structure (same as workspace 1)
-if [ ${#WINDOW_IDS[@]} -ge 4 ]; then
-    aerospace focus --window-id ${WINDOW_IDS[3]}
-    aerospace move left
+  # Create 3×2 grid structure
+  # Row 1: 3 windows side by side (default horizontal layout)
+  # Row 2: 3 windows side by side (need to arrange)
+
+  if [ "$WINDOW_COUNT" -ge 4 ]; then
+    aerospace focus --window-id "${WINDOW_IDS[3]}"
+    aerospace move left 2>/dev/null || true
     aerospace move down 2>/dev/null || true
-fi
+  fi
 
-if [ ${#WINDOW_IDS[@]} -ge 5 ]; then
-    aerospace focus --window-id ${WINDOW_IDS[4]}
-    aerospace move right
-fi
+  if [ "$WINDOW_COUNT" -ge 5 ]; then
+    aerospace focus --window-id "${WINDOW_IDS[4]}"
+    aerospace move right 2>/dev/null || true
+  fi
 
-if [ ${#WINDOW_IDS[@]} -ge 6 ]; then
-    aerospace focus --window-id ${WINDOW_IDS[5]}
-    aerospace move right
-fi
+  if [ "$WINDOW_COUNT" -ge 6 ]; then
+    aerospace focus --window-id "${WINDOW_IDS[5]}"
+    aerospace move right 2>/dev/null || true
+  fi
 
-# Balance the layout
-aerospace balance-sizes
+  # Balance the layout
+  aerospace balance-sizes
+fi
 
 echo "Workspace ${WORKSPACE} initialized successfully"
 ```
@@ -1433,72 +1443,83 @@ echo "Workspace ${WORKSPACE} initialized successfully"
 #!/usr/bin/env bash
 # Workspace 3: Mixed Layout (2 narrow Ghostty terminals + 2 Chrome windows in center)
 
-set -euo pipefail
+# Source common functions
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=./common.sh
+source "$SCRIPT_DIR/common.sh"
 
 WORKSPACE=3
+TARGET_GHOSTTY=2
+TARGET_CHROME=2
 
-echo "Initializing Workspace ${WORKSPACE}: Mixed Layout (2 Ghostty + 2 Chrome)"
+echo "Initializing Workspace ${WORKSPACE}: Mixed Layout (${TARGET_GHOSTTY} Ghostty + ${TARGET_CHROME} Chrome)"
 
 # Switch to workspace
-aerospace workspace ${WORKSPACE}
+aerospace workspace "$WORKSPACE"
 
 # Flatten any existing layout
-aerospace flatten-workspace-tree
+act "aerospace flatten-workspace-tree"
 
-# Open 2 Ghostty terminals (narrower terminals for sides)
-for i in {1..2}; do
-    open -na "Ghostty"
-    sleep 0.5
-done
+# Open Ghostty terminals until we have the target count (idempotent)
+open_until_count "$WORKSPACE" "Ghostty" "com.mitchellh.ghostty" "$TARGET_GHOSTTY"
 
-# Open 2 Chrome windows
-for i in {1..2}; do
-    open -na "Google Chrome" --args --new-window
-    sleep 0.5
-done
+# Open Chrome windows until we have the target count (idempotent)
+open_until_count "$WORKSPACE" "Google Chrome" "com.google.Chrome" "$TARGET_CHROME"
 
-# Wait for windows to open
-sleep 2
+# Wait for all windows to be ready
+sleep 1
 
 # Get window IDs
-GHOSTTY_IDS=($(aerospace list-windows --workspace ${WORKSPACE} --app-id com.mitchellh.ghostty | awk '{print $1}'))
-CHROME_IDS=($(aerospace list-windows --workspace ${WORKSPACE} --app-id com.google.Chrome | awk '{print $1}'))
+GHOSTTY_IDS=($(aerospace list-windows --workspace "$WORKSPACE" --app-id com.mitchellh.ghostty | awk '{print $1}'))
+CHROME_IDS=($(aerospace list-windows --workspace "$WORKSPACE" --app-id com.google.Chrome | awk '{print $1}'))
 
-echo "Found ${#GHOSTTY_IDS[@]} Ghostty windows and ${#CHROME_IDS[@]} Chrome windows"
+GHOSTTY_COUNT=${#GHOSTTY_IDS[@]}
+CHROME_COUNT=${#CHROME_IDS[@]}
+echo "Found $GHOSTTY_COUNT Ghostty windows and $CHROME_COUNT Chrome windows"
 
-# Set horizontal layout
-aerospace layout h_tiles
-
-# Arrange: Ghostty | Chrome | Chrome | Ghostty
-# Focus and arrange windows
-if [ ${#GHOSTTY_IDS[@]} -ge 1 ]; then
-    aerospace focus --window-id ${GHOSTTY_IDS[0]}
+if [ "$GHOSTTY_COUNT" -lt "$TARGET_GHOSTTY" ]; then
+  echo "Warning: Expected $TARGET_GHOSTTY Ghostty windows, found $GHOSTTY_COUNT"
 fi
 
-if [ ${#CHROME_IDS[@]} -ge 1 ]; then
-    aerospace focus --window-id ${CHROME_IDS[0]}
-    aerospace move right
+if [ "$CHROME_COUNT" -lt "$TARGET_CHROME" ]; then
+  echo "Warning: Expected $TARGET_CHROME Chrome windows, found $CHROME_COUNT"
 fi
 
-if [ ${#CHROME_IDS[@]} -ge 2 ]; then
-    aerospace focus --window-id ${CHROME_IDS[1]}
-    aerospace move right
-fi
+# Only arrange if we're in act mode and have windows
+if [ "$ALPHA" -ge 1 ] && [ "$GHOSTTY_COUNT" -ge 1 ] && [ "$CHROME_COUNT" -ge 1 ]; then
+  # Set horizontal layout
+  aerospace layout h_tiles
 
-if [ ${#GHOSTTY_IDS[@]} -ge 2 ]; then
-    aerospace focus --window-id ${GHOSTTY_IDS[1]}
-    aerospace move right
-fi
+  # Arrange: Ghostty | Chrome | Chrome | Ghostty
+  if [ "$GHOSTTY_COUNT" -ge 1 ]; then
+    aerospace focus --window-id "${GHOSTTY_IDS[0]}"
+  fi
 
-# Resize terminals to be narrower (20% each) and Chrome wider (30% each)
-if [ ${#GHOSTTY_IDS[@]} -ge 1 ]; then
-    aerospace focus --window-id ${GHOSTTY_IDS[0]}
-    aerospace resize width -200
-fi
+  if [ "$CHROME_COUNT" -ge 1 ]; then
+    aerospace focus --window-id "${CHROME_IDS[0]}"
+    aerospace move right 2>/dev/null || true
+  fi
 
-if [ ${#GHOSTTY_IDS[@]} -ge 2 ]; then
-    aerospace focus --window-id ${GHOSTTY_IDS[1]}
-    aerospace resize width -200
+  if [ "$CHROME_COUNT" -ge 2 ]; then
+    aerospace focus --window-id "${CHROME_IDS[1]}"
+    aerospace move right 2>/dev/null || true
+  fi
+
+  if [ "$GHOSTTY_COUNT" -ge 2 ]; then
+    aerospace focus --window-id "${GHOSTTY_IDS[1]}"
+    aerospace move right 2>/dev/null || true
+  fi
+
+  # Resize terminals to be narrower (20% each) and Chrome wider (30% each)
+  if [ "$GHOSTTY_COUNT" -ge 1 ]; then
+    aerospace focus --window-id "${GHOSTTY_IDS[0]}"
+    aerospace resize width -200 2>/dev/null || true
+  fi
+
+  if [ "$GHOSTTY_COUNT" -ge 2 ]; then
+    aerospace focus --window-id "${GHOSTTY_IDS[1]}"
+    aerospace resize width -200 2>/dev/null || true
+  fi
 fi
 
 echo "Workspace ${WORKSPACE} initialized successfully"
@@ -1513,45 +1534,64 @@ echo "Workspace ${WORKSPACE} initialized successfully"
 #!/usr/bin/env bash
 # Workspace 4: Full Screen Safari
 
-set -euo pipefail
+# Source common functions
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=./common.sh
+source "$SCRIPT_DIR/common.sh"
 
 WORKSPACE=4
+TARGET_COUNT=1
 
 echo "Initializing Workspace ${WORKSPACE}: Full Screen Safari"
 
 # Switch to workspace
-aerospace workspace ${WORKSPACE}
+aerospace workspace "$WORKSPACE"
 
 # Flatten any existing layout
-aerospace flatten-workspace-tree
+act "aerospace flatten-workspace-tree"
 
-# Open Safari if not already open
-open -a "Safari"
+# Check if we already have Safari window
+HAVE_COUNT=$(get_window_count "$WORKSPACE" "com.apple.Safari")
 
-# Wait for window to open
-sleep 2
+if [ "$HAVE_COUNT" -lt "$TARGET_COUNT" ]; then
+  echo "Opening Safari..."
+  act "open -a \"Safari\""
 
-# Get Safari window ID
-SAFARI_IDS=($(aerospace list-windows --workspace ${WORKSPACE} --app-id com.apple.Safari | awk '{print $1}'))
+  # Wait for window to appear
+  sleep 2
 
-if [ ${#SAFARI_IDS[@]} -eq 0 ]; then
-    echo "Warning: No Safari window found, trying to open new window"
-    osascript -e 'tell application "Safari" to make new document' 2>/dev/null || true
+  HAVE_COUNT=$(get_window_count "$WORKSPACE" "com.apple.Safari")
+
+  # If still no window, try to create new document
+  if [ "$HAVE_COUNT" -eq 0 ]; then
+    echo "Trying to create new Safari window..."
+    act "osascript -e 'tell application \"Safari\" to make new document' 2>/dev/null || true"
     sleep 1
-    SAFARI_IDS=($(aerospace list-windows --workspace ${WORKSPACE} --app-id com.apple.Safari | awk '{print $1}'))
+    HAVE_COUNT=$(get_window_count "$WORKSPACE" "com.apple.Safari")
+  fi
+else
+  echo "Already have $HAVE_COUNT Safari window(s) in workspace $WORKSPACE"
 fi
 
-if [ ${#SAFARI_IDS[@]} -ge 1 ]; then
-    # Focus Safari window
-    aerospace focus --window-id ${SAFARI_IDS[0]}
+# Get Safari window IDs
+SAFARI_IDS=($(aerospace list-windows --workspace "$WORKSPACE" --app-id com.apple.Safari | awk '{print $1}'))
+SAFARI_COUNT=${#SAFARI_IDS[@]}
 
-    # Set to fullscreen
-    aerospace fullscreen on
+echo "Found $SAFARI_COUNT Safari window(s)"
 
-    echo "Workspace ${WORKSPACE} initialized successfully"
+# Only arrange if we're in act mode and have a window
+if [ "$ALPHA" -ge 1 ] && [ "$SAFARI_COUNT" -ge 1 ]; then
+  # Focus Safari window
+  aerospace focus --window-id "${SAFARI_IDS[0]}"
+
+  # Set to fullscreen
+  aerospace fullscreen on
+
+  echo "Workspace ${WORKSPACE} initialized successfully"
+elif [ "$SAFARI_COUNT" -eq 0 ]; then
+  echo "Warning: Could not initialize Safari window"
 else
-    echo "Error: Could not initialize Safari window"
-    exit 1
+  echo "Workspace ${WORKSPACE} initialized successfully (plan mode)"
 fi
 ```
 
@@ -1564,59 +1604,69 @@ fi
 #!/usr/bin/env bash
 # Workspace 5: Chrome Grid (6 Chrome windows in 3×2 grid)
 
-set -euo pipefail
+# Source common functions
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=./common.sh
+source "$SCRIPT_DIR/common.sh"
 
 WORKSPACE=5
+TARGET_COUNT=6
 
-echo "Initializing Workspace ${WORKSPACE}: Chrome Grid (6 windows)"
+echo "Initializing Workspace ${WORKSPACE}: Chrome Grid (${TARGET_COUNT} windows)"
 
 # Switch to workspace
-aerospace workspace ${WORKSPACE}
+aerospace workspace "$WORKSPACE"
 
 # Flatten any existing layout
-aerospace flatten-workspace-tree
+act "aerospace flatten-workspace-tree"
 
-# Open 6 Chrome windows
-for i in {1..6}; do
-    open -na "Google Chrome" --args --new-window
-    sleep 0.5
-done
+# Open Chrome windows until we have the target count (idempotent)
+open_until_count "$WORKSPACE" "Google Chrome" "com.google.Chrome" "$TARGET_COUNT"
 
-# Wait for windows to open
-sleep 2
+# Wait for all windows to be ready
+sleep 1
 
 # Get all Chrome window IDs in this workspace
-WINDOW_IDS=($(aerospace list-windows --workspace ${WORKSPACE} --app-id com.google.Chrome | awk '{print $1}'))
+WINDOW_IDS=($(aerospace list-windows --workspace "$WORKSPACE" --app-id com.google.Chrome | awk '{print $1}'))
 
-if [ ${#WINDOW_IDS[@]} -lt 6 ]; then
-    echo "Warning: Expected 6 windows, found ${#WINDOW_IDS[@]}"
+WINDOW_COUNT=${#WINDOW_IDS[@]}
+echo "Found $WINDOW_COUNT Chrome windows in workspace $WORKSPACE"
+
+if [ "$WINDOW_COUNT" -lt "$TARGET_COUNT" ]; then
+  echo "Warning: Expected $TARGET_COUNT windows, found $WINDOW_COUNT"
 fi
 
-# Focus first window
-aerospace focus --window-id ${WINDOW_IDS[0]} 2>/dev/null || true
+# Only arrange if we're in act mode and have windows
+if [ "$ALPHA" -ge 1 ] && [ "$WINDOW_COUNT" -ge 3 ]; then
+  # Focus first window
+  aerospace focus --window-id "${WINDOW_IDS[0]}" 2>/dev/null || true
 
-# Set to horizontal tiles layout
-aerospace layout h_tiles
+  # Set to horizontal tiles layout for the root
+  aerospace layout h_tiles
 
-# Create 3×2 grid structure
-if [ ${#WINDOW_IDS[@]} -ge 4 ]; then
-    aerospace focus --window-id ${WINDOW_IDS[3]}
-    aerospace move left
+  # Create 3×2 grid structure
+  # Row 1: 3 windows side by side (default horizontal layout)
+  # Row 2: 3 windows side by side (need to arrange)
+
+  if [ "$WINDOW_COUNT" -ge 4 ]; then
+    aerospace focus --window-id "${WINDOW_IDS[3]}"
+    aerospace move left 2>/dev/null || true
     aerospace move down 2>/dev/null || true
-fi
+  fi
 
-if [ ${#WINDOW_IDS[@]} -ge 5 ]; then
-    aerospace focus --window-id ${WINDOW_IDS[4]}
-    aerospace move right
-fi
+  if [ "$WINDOW_COUNT" -ge 5 ]; then
+    aerospace focus --window-id "${WINDOW_IDS[4]}"
+    aerospace move right 2>/dev/null || true
+  fi
 
-if [ ${#WINDOW_IDS[@]} -ge 6 ]; then
-    aerospace focus --window-id ${WINDOW_IDS[5]}
-    aerospace move right
-fi
+  if [ "$WINDOW_COUNT" -ge 6 ]; then
+    aerospace focus --window-id "${WINDOW_IDS[5]}"
+    aerospace move right 2>/dev/null || true
+  fi
 
-# Balance the layout
-aerospace balance-sizes
+  # Balance the layout
+  aerospace balance-sizes
+fi
 
 echo "Workspace ${WORKSPACE} initialized successfully"
 ```
@@ -1630,75 +1680,84 @@ echo "Workspace ${WORKSPACE} initialized successfully"
 #!/usr/bin/env bash
 # Workspace 6: Development Layout (VSCode 75% left + 2 Chrome stacked 25% right)
 
-set -euo pipefail
+# Source common functions
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=./common.sh
+source "$SCRIPT_DIR/common.sh"
 
 WORKSPACE=6
+TARGET_VSCODE=1
+TARGET_CHROME=2
 
-echo "Initializing Workspace ${WORKSPACE}: Development Layout (VSCode + 2 Chrome)"
+echo "Initializing Workspace ${WORKSPACE}: Development Layout (${TARGET_VSCODE} VSCode + ${TARGET_CHROME} Chrome)"
 
 # Switch to workspace
-aerospace workspace ${WORKSPACE}
+aerospace workspace "$WORKSPACE"
 
 # Flatten any existing layout
-aerospace flatten-workspace-tree
+act "aerospace flatten-workspace-tree"
 
-# Open VSCode
-open -na "Visual Studio Code"
+# Open VSCode until we have the target count (idempotent)
+open_until_count "$WORKSPACE" "Visual Studio Code" "com.microsoft.VSCode" "$TARGET_VSCODE"
+
+# Open Chrome windows until we have the target count (idempotent)
+open_until_count "$WORKSPACE" "Google Chrome" "com.google.Chrome" "$TARGET_CHROME"
+
+# Wait for all windows to be ready
 sleep 1
 
-# Open 2 Chrome windows
-for i in {1..2}; do
-    open -na "Google Chrome" --args --new-window
-    sleep 0.5
-done
-
-# Wait for windows to open
-sleep 2
-
 # Get window IDs
-VSCODE_IDS=($(aerospace list-windows --workspace ${WORKSPACE} --app-id com.microsoft.VSCode | awk '{print $1}'))
-CHROME_IDS=($(aerospace list-windows --workspace ${WORKSPACE} --app-id com.google.Chrome | awk '{print $1}'))
+VSCODE_IDS=($(aerospace list-windows --workspace "$WORKSPACE" --app-id com.microsoft.VSCode | awk '{print $1}'))
+CHROME_IDS=($(aerospace list-windows --workspace "$WORKSPACE" --app-id com.google.Chrome | awk '{print $1}'))
 
-echo "Found ${#VSCODE_IDS[@]} VSCode windows and ${#CHROME_IDS[@]} Chrome windows"
+VSCODE_COUNT=${#VSCODE_IDS[@]}
+CHROME_COUNT=${#CHROME_IDS[@]}
+echo "Found $VSCODE_COUNT VSCode window(s) and $CHROME_COUNT Chrome windows"
 
-if [ ${#VSCODE_IDS[@]} -eq 0 ]; then
-    echo "Error: No VSCode window found"
-    exit 1
+if [ "$VSCODE_COUNT" -lt "$TARGET_VSCODE" ]; then
+  echo "Warning: Expected $TARGET_VSCODE VSCode window, found $VSCODE_COUNT"
 fi
 
-# Set horizontal layout
-aerospace layout h_tiles
-
-# Arrange: VSCode (left, large) | Chrome | Chrome (right, stacked)
-if [ ${#VSCODE_IDS[@]} -ge 1 ]; then
-    aerospace focus --window-id ${VSCODE_IDS[0]}
+if [ "$CHROME_COUNT" -lt "$TARGET_CHROME" ]; then
+  echo "Warning: Expected $TARGET_CHROME Chrome windows, found $CHROME_COUNT"
 fi
 
-if [ ${#CHROME_IDS[@]} -ge 1 ]; then
-    aerospace focus --window-id ${CHROME_IDS[0]}
-    aerospace move right
-fi
+# Only arrange if we're in act mode and have windows
+if [ "$ALPHA" -ge 1 ] && [ "$VSCODE_COUNT" -ge 1 ] && [ "$CHROME_COUNT" -ge 1 ]; then
+  # Set horizontal layout
+  aerospace layout h_tiles
 
-if [ ${#CHROME_IDS[@]} -ge 2 ]; then
-    aerospace focus --window-id ${CHROME_IDS[1]}
-    aerospace move right
+  # Arrange: VSCode (left, large) | Chrome | Chrome (right, stacked)
+  if [ "$VSCODE_COUNT" -ge 1 ]; then
+    aerospace focus --window-id "${VSCODE_IDS[0]}"
+  fi
+
+  if [ "$CHROME_COUNT" -ge 1 ]; then
+    aerospace focus --window-id "${CHROME_IDS[0]}"
+    aerospace move right 2>/dev/null || true
+  fi
+
+  if [ "$CHROME_COUNT" -ge 2 ]; then
+    aerospace focus --window-id "${CHROME_IDS[1]}"
+    aerospace move right 2>/dev/null || true
     # Stack the second Chrome window below the first
     aerospace move down 2>/dev/null || true
-fi
+  fi
 
-# Resize VSCode to be ~75% width
-if [ ${#VSCODE_IDS[@]} -ge 1 ]; then
-    aerospace focus --window-id ${VSCODE_IDS[0]}
+  # Resize VSCode to be ~75% width
+  if [ "$VSCODE_COUNT" -ge 1 ]; then
+    aerospace focus --window-id "${VSCODE_IDS[0]}"
     # Increase width significantly
     for i in {1..3}; do
-        aerospace resize width +200
+      aerospace resize width +200 2>/dev/null || true
     done
-fi
+  fi
 
-# Balance Chrome windows vertically
-if [ ${#CHROME_IDS[@]} -ge 2 ]; then
-    aerospace focus --window-id ${CHROME_IDS[0]}
+  # Balance Chrome windows vertically
+  if [ "$CHROME_COUNT" -ge 2 ]; then
+    aerospace focus --window-id "${CHROME_IDS[0]}"
     aerospace balance-sizes
+  fi
 fi
 
 echo "Workspace ${WORKSPACE} initialized successfully"
@@ -1713,20 +1772,31 @@ echo "Workspace ${WORKSPACE} initialized successfully"
 #!/usr/bin/env bash
 # Workspace 7: Full Screen Tmux (Single Ghostty terminal with tmux, fullscreen)
 
-set -euo pipefail
+# Source common functions
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=./common.sh
+source "$SCRIPT_DIR/common.sh"
 
 WORKSPACE=7
+TARGET_COUNT=1
 
 echo "Initializing Workspace ${WORKSPACE}: Full Screen Tmux"
 
 # Switch to workspace
-aerospace workspace ${WORKSPACE}
+aerospace workspace "$WORKSPACE"
 
 # Flatten any existing layout
-aerospace flatten-workspace-tree
+act "aerospace flatten-workspace-tree"
 
-# Open Ghostty terminal with tmux
-osascript <<EOF
+# Check if we already have Ghostty window
+HAVE_COUNT=$(get_window_count "$WORKSPACE" "com.mitchellh.ghostty")
+
+if [ "$HAVE_COUNT" -lt "$TARGET_COUNT" ]; then
+  echo "Opening Ghostty with tmux..."
+
+  # Try using AppleScript to open Ghostty and start tmux
+  if [ "$ALPHA" -ge 1 ]; then
+    osascript <<EOF 2>/dev/null || true
 tell application "Ghostty"
     activate
     delay 0.5
@@ -1736,33 +1806,46 @@ tell application "Ghostty"
     end tell
 end tell
 EOF
+  else
+    plan "osascript to open Ghostty and start tmux session 'main'"
+  fi
 
-# Wait for window to open
-sleep 2
+  # Wait for window to appear
+  sleep 2
 
-# Get Ghostty window ID
-GHOSTTY_IDS=($(aerospace list-windows --workspace ${WORKSPACE} --app-id com.mitchellh.ghostty | awk '{print $1}'))
+  HAVE_COUNT=$(get_window_count "$WORKSPACE" "com.mitchellh.ghostty")
 
-if [ ${#GHOSTTY_IDS[@]} -eq 0 ]; then
-    # Fallback: just open Ghostty normally
+  # Fallback: just open Ghostty normally if AppleScript failed
+  if [ "$HAVE_COUNT" -eq 0 ]; then
     echo "AppleScript failed, opening Ghostty normally"
-    open -na "Ghostty"
+    act "open -na \"Ghostty\""
     sleep 2
-    GHOSTTY_IDS=($(aerospace list-windows --workspace ${WORKSPACE} --app-id com.mitchellh.ghostty | awk '{print $1}'))
+    HAVE_COUNT=$(get_window_count "$WORKSPACE" "com.mitchellh.ghostty")
+  fi
+else
+  echo "Already have $HAVE_COUNT Ghostty window(s) in workspace $WORKSPACE"
 fi
 
-if [ ${#GHOSTTY_IDS[@]} -ge 1 ]; then
-    # Focus Ghostty window
-    aerospace focus --window-id ${GHOSTTY_IDS[0]}
+# Get Ghostty window IDs
+GHOSTTY_IDS=($(aerospace list-windows --workspace "$WORKSPACE" --app-id com.mitchellh.ghostty | awk '{print $1}'))
+GHOSTTY_COUNT=${#GHOSTTY_IDS[@]}
 
-    # Set to fullscreen
-    aerospace fullscreen on
+echo "Found $GHOSTTY_COUNT Ghostty window(s)"
 
-    echo "Workspace ${WORKSPACE} initialized successfully"
-    echo "Note: You may need to manually start tmux with 'tmux new-session -A -s main'"
+# Only arrange if we're in act mode and have a window
+if [ "$ALPHA" -ge 1 ] && [ "$GHOSTTY_COUNT" -ge 1 ]; then
+  # Focus Ghostty window
+  aerospace focus --window-id "${GHOSTTY_IDS[0]}"
+
+  # Set to fullscreen
+  aerospace fullscreen on
+
+  echo "Workspace ${WORKSPACE} initialized successfully"
+  echo "Note: You may need to manually start tmux with 'tmux new-session -A -s main'"
+elif [ "$GHOSTTY_COUNT" -eq 0 ]; then
+  echo "Warning: Could not initialize Ghostty window"
 else
-    echo "Error: Could not initialize Ghostty window"
-    exit 1
+  echo "Workspace ${WORKSPACE} initialized successfully (plan mode)"
 fi
 ```
 
@@ -6348,7 +6431,7 @@ echo "To re-enable: git config core.hooksPath .githooks"
 
 ## Generation Metadata
 
-- **Generated:** 2025-10-15 11:47:04
+- **Generated:** 2025-10-15 11:53:57
 - **Repository:** mac_dev_setup
 - **Files processed:** 41
 - **Generator:** scripts/generate_context.sh
