@@ -506,8 +506,7 @@ Trigger workspace initialization from launcher:
 
 - AeroSpace Documentation: https://nikitabobko.github.io/AeroSpace/
 - AeroSpace GitHub: https://github.com/nikitabobko/AeroSpace
-- Hyperspeed Repository: https://github.com/russet/hyperspeed
-- This Setup: ~/hyperspeed/
+- This Setup: ~/mac_dev_setup/
 - Script Documentation: ~/.config/aerospace/scripts/README.md
 - Configuration File: ~/.config/aerospace/aerospace.toml
 

@@ -10,9 +10,6 @@ Generated for providing full context to external LLMs.
 ```
 .
 |____DIRECTORY_CONTEXT.md
-|____.githooks
-| |____README.md
-| |____pre-commit
 |____.DS_Store
 |____justfile
 |____.pre-commit-config.yaml
@@ -60,7 +57,6 @@ Generated for providing full context to external LLMs.
 | | |____nvim_init.lua
 |____scripts
 | |____install.sh
-| |____setup_git_hooks.sh
 | |____setup_aerospace_automation.sh
 | |____generate_context.sh
 |____.github
@@ -73,114 +69,6 @@ Generated for providing full context to external LLMs.
 ## File Contents
 
 Each file is separated by a header showing its path.
-
----
-
-
-### File: `.githooks/README.md`
-
-```
-# Git Hooks
-
-This directory contains custom git hooks for the mac_dev_setup repository.
-
-## Setup
-
-To enable these hooks, run:
-
-```bash
-./scripts/setup_git_hooks.sh
-```
-
-This configures git to use `.githooks/` instead of the default `.git/hooks/` directory.
-
-## Available Hooks
-
-### pre-commit
-
-**Purpose:** Automatically regenerates `DIRECTORY_CONTEXT.md` before each commit.
-
-**What it does:**
-1. Runs `scripts/generate_context.sh`
-2. Updates `DIRECTORY_CONTEXT.md` with current repository state
-3. Automatically stages the updated context file
-4. Ensures the context is always current in the repository
-
-**Why:** This keeps the LLM context file synchronized with repository changes, making it easy to provide up-to-date context to external LLMs.
-
-## Disabling Hooks
-
-To temporarily disable all hooks:
-```bash
-git config --unset core.hooksPath
-```
-
-To re-enable:
-```bash
-git config core.hooksPath .githooks
-```
-
-To skip hooks for a single commit:
-```bash
-git commit --no-verify
-```
-
-## Adding New Hooks
-
-1. Create a new executable script in `.githooks/` (e.g., `pre-push`, `commit-msg`, etc.)
-2. Make it executable: `chmod +x .githooks/your-hook`
-3. The hook will automatically be used on the next git operation
-
-## Standard Git Hooks
-
-Available git hooks you can create:
-- `pre-commit` - Run before commit is created
-- `prepare-commit-msg` - Edit default commit message
-- `commit-msg` - Validate commit message
-- `post-commit` - Run after commit is created
-- `pre-push` - Run before push
-- `post-merge` - Run after merge
-- `post-checkout` - Run after checkout
-
-See: https://git-scm.com/docs/githooks
-```
-
----
-
-
-### File: `.githooks/pre-commit`
-
-```
-#!/usr/bin/env bash
-# Pre-commit hook to regenerate DIRECTORY_CONTEXT.md
-# This ensures the context file is always up-to-date with the repository
-
-set -e
-
-echo "🔄 Regenerating directory context..."
-
-# Get to repository root
-REPO_ROOT=$(git rev-parse --show-toplevel)
-cd "$REPO_ROOT"
-
-# Run the context generation script
-if [ -f "scripts/generate_context.sh" ]; then
-    # Run the script, suppressing most output
-    ./scripts/generate_context.sh > /dev/null 2>&1 || {
-        echo "⚠️  Warning: Failed to generate context file"
-        exit 0  # Don't fail the commit, just warn
-    }
-
-    # Check if DIRECTORY_CONTEXT.md was modified
-    if [ -f "DIRECTORY_CONTEXT.md" ]; then
-        # Stage the updated context file
-        git add DIRECTORY_CONTEXT.md
-        echo "✓ Directory context updated and staged"
-    fi
-else
-    echo "⚠️  Warning: scripts/generate_context.sh not found"
-fi
-```
 
 ---
 
@@ -198,10 +86,16 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Install pre-commit
-        run: pip install pre-commit
+      - name: Install pre-commit and gitleaks
+        run: |
+          pip install pre-commit
+          wget https://github.com/gitleaks/gitleaks/releases/download/v8.18.0/gitleaks_8.18.0_linux_x64.tar.gz
+          tar -xzf gitleaks_8.18.0_linux_x64.tar.gz
+          sudo mv gitleaks /usr/local/bin/
       - name: Run pre-commit checks
         run: pre-commit run --all-files
+      - name: Gitleaks full scan (belt-and-suspenders)
+        run: gitleaks detect --source . --redact
 ```
 
 ---
@@ -280,7 +174,17 @@ repos:
   rev: v8.18.0
   hooks:
     - id: gitleaks
-      args: ["protect", "--staged"]
+      name: gitleaks (repo scan)
+      args: ["detect", "--source", ".", "--redact"]
+
+# regenerate DIRECTORY_CONTEXT.md on every commit
+- repo: local
+  hooks:
+    - id: regenerate-directory-context
+      name: Regenerate DIRECTORY_CONTEXT.md
+      entry: bash scripts/generate_context.sh
+      language: system
+      pass_filenames: false
 ```
 
 ---
@@ -289,11 +193,9 @@ repos:
 ### File: `README.md`
 
 ```
-# Hyperspeed
+# mac_dev_setup
 
 A complete, opinionated development environment for macOS with a focus on keyboard-driven workflows, modern CLI tools, and the beautiful Catppuccin Mocha theme.
-
-**By [Russet](https://github.com/russet)** 🍎 - Tools for Apple platforms
 
 ## Philosophy
 
@@ -338,8 +240,8 @@ This setup prioritizes:
 
 ```bash
 # Clone this repository
-git clone https://github.com/russet/hyperspeed.git ~/hyperspeed
-cd ~/hyperspeed
+git clone <your-repo-url> ~/mac_dev_setup
+cd ~/mac_dev_setup
 
 # Run the installation script
 chmod +x scripts/install.sh
@@ -2200,8 +2102,8 @@ export OPENROUTER_API_KEY="${OPENROUTER_API_KEY:-$(security find-generic-passwor
 # Autonomy slider for scripts: 0=plan-only (safe), 1=full-act
 export AUTONOMY="${AUTONOMY:-0}"
 
-# Added by Windsurf (user-specific)
-[ -d "/Users/$USER/.codeium/windsurf/bin" ] && export PATH="/Users/$USER/.codeium/windsurf/bin:$PATH"
+# Windsurf (optional)
+[ -d "$HOME/.codeium/windsurf/bin" ] && export PATH="$HOME/.codeium/windsurf/bin:$PATH"
 
 # Development environment setup
 export PATH="/opt/homebrew/bin:/usr/local/bin:$HOME/.local/bin:$PATH"
@@ -2354,10 +2256,10 @@ for _ in $(seq 1 $need); do act 'open -na "Ghostty"'; done
 - [x] Create GitHub Actions workflow
 - [x] Update .githooks/pre-commit to fail on errors
 
-### Phase 2: Barriers (In Progress)
-- [ ] Add AUTONOMY slider to workspace scripts
-- [ ] Add DRYRUN mode to install.sh
-- [ ] Make all scripts idempotent
+### Phase 2: Barriers (Complete)
+- [x] Add AUTONOMY slider to workspace scripts
+- [x] Add DRYRUN mode to install.sh
+- [x] Make all scripts idempotent
 
 ### Phase 3: Documentation (Pending)
 - [ ] Update README with new patterns
@@ -2900,8 +2802,7 @@ Trigger workspace initialization from launcher:
 
 - AeroSpace Documentation: https://nikitabobko.github.io/AeroSpace/
 - AeroSpace GitHub: https://github.com/nikitabobko/AeroSpace
-- Hyperspeed Repository: https://github.com/russet/hyperspeed
-- This Setup: ~/hyperspeed/
+- This Setup: ~/mac_dev_setup/
 - Script Documentation: ~/.config/aerospace/scripts/README.md
 - Configuration File: ~/.config/aerospace/aerospace.toml
 
@@ -5140,9 +5041,9 @@ DRYRUN=0 ./scripts/install.sh
 
 ### Remaining Risks ⚠️
 
-- ⚠️ Git history still contains exposed key (action required - use BFG)
-- ⚠️ Pre-commit hooks not yet installed (one-time setup: `just hooks`)
-- ⚠️ CI workflow untested (no PR created yet)
+- ⚠️ Git history may still contain old keys; purge with BFG/filter-repo if not done
+- ⚠️ Ensure contributors run `pre-commit install`
+- ⚠️ Verify CI on first PR
 
 ## Resources
 
@@ -6042,13 +5943,13 @@ if [[ -f "$CONFIG_DIR/development/gitconfig" ]]; then
   EXISTING_NAME=$(git config --global user.name 2>/dev/null || echo "")
   EXISTING_EMAIL=$(git config --global user.email 2>/dev/null || echo "")
 
-  cp "$CONFIG_DIR/development/gitconfig" "$HOME/.gitconfig"
+  run "cp '$CONFIG_DIR/development/gitconfig' '$HOME/.gitconfig'"
 
   if [[ -n "$EXISTING_NAME" ]]; then
-    git config --global user.name "$EXISTING_NAME"
+    run "git config --global user.name '$EXISTING_NAME'"
   fi
   if [[ -n "$EXISTING_EMAIL" ]]; then
-    git config --global user.email "$EXISTING_EMAIL"
+    run "git config --global user.email '$EXISTING_EMAIL'"
   fi
 
   print_success "Installed git config"
@@ -6056,63 +5957,63 @@ fi
 
 # Desktop environment configs
 if [[ -f "$CONFIG_DIR/desktop/aerospace.toml" ]]; then
-  cp "$CONFIG_DIR/desktop/aerospace.toml" "$HOME/.config/aerospace/aerospace.toml"
+  run "cp '$CONFIG_DIR/desktop/aerospace.toml' '$HOME/.config/aerospace/aerospace.toml'"
   print_success "Installed AeroSpace config"
 fi
 
 if [[ -f "$CONFIG_DIR/desktop/karabiner.json" ]]; then
-  cp "$CONFIG_DIR/desktop/karabiner.json" "$HOME/.config/karabiner/karabiner.json"
+  run "cp '$CONFIG_DIR/desktop/karabiner.json' '$HOME/.config/karabiner/karabiner.json'"
   print_success "Installed Karabiner config"
 fi
 
 # Editor configs
 if [[ -f "$CONFIG_DIR/editor/vscode_settings.json" ]]; then
-  mkdir -p "$HOME/Library/Application Support/Code/User"
-  cp "$CONFIG_DIR/editor/vscode_settings.json" "$HOME/Library/Application Support/Code/User/settings.json"
+  run "mkdir -p '$HOME/Library/Application Support/Code/User'"
+  run "cp '$CONFIG_DIR/editor/vscode_settings.json' '$HOME/Library/Application Support/Code/User/settings.json'"
   print_success "Installed VSCode settings"
 fi
 
 # Step 10: Clone and install additional tools
 print_info "Installing tmux plugin manager..."
 if [[ ! -d "$HOME/.tmux/plugins/tpm" ]]; then
-  git clone --depth=1 https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
+  run "git clone --depth=1 https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm"
   print_success "Installed tmux plugin manager"
 fi
 
 print_info "Installing AstroNvim..."
 if [[ ! -d "$HOME/.config/nvim" ]] || [[ ! -d "$HOME/.config/nvim/.git" ]]; then
-  git clone https://github.com/AstroNvim/AstroNvim ~/.config/nvim --depth 1
+  run "git clone https://github.com/AstroNvim/AstroNvim ~/.config/nvim --depth 1"
   if [[ -f "$CONFIG_DIR/editor/nvim_init.lua" ]]; then
-    mkdir -p "$HOME/.config/nvim/lua/user"
-    cp "$CONFIG_DIR/editor/nvim_init.lua" "$HOME/.config/nvim/lua/user/init.lua"
+    run "mkdir -p '$HOME/.config/nvim/lua/user'"
+    run "cp '$CONFIG_DIR/editor/nvim_init.lua' '$HOME/.config/nvim/lua/user/init.lua'"
   fi
   print_success "Installed AstroNvim"
 fi
 
 # Step 11: FZF shell integration
 print_info "Installing fzf shell integration..."
-$(brew --prefix)/opt/fzf/install --all --no-bash --no-fish 2>&1 | grep -v "Downloading" || true
+run "\$(brew --prefix)/opt/fzf/install --all --no-bash --no-fish 2>&1 | grep -v 'Downloading' || true"
 print_success "fzf integration installed"
 
 # Step 12: Install VSCode extensions
 print_info "Installing VSCode extensions..."
 CODE="/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code"
 if [[ -f "$CODE" ]]; then
-  "$CODE" --install-extension catppuccin.catppuccin-vsc --force
-  "$CODE" --install-extension pkief.material-icon-theme --force
-  "$CODE" --install-extension vscodevim.vim --force
-  "$CODE" --install-extension ms-python.python --force
-  "$CODE" --install-extension ms-python.vscode-pylance --force
-  "$CODE" --install-extension charliermarsh.ruff --force
-  "$CODE" --install-extension rust-lang.rust-analyzer --force
-  "$CODE" --install-extension golang.go --force
-  "$CODE" --install-extension esbenp.prettier-vscode --force
-  "$CODE" --install-extension dbaeumer.vscode-eslint --force
-  "$CODE" --install-extension ms-azuretools.vscode-docker --force
-  "$CODE" --install-extension hashicorp.terraform --force
-  "$CODE" --install-extension redhat.vscode-yaml --force
-  "$CODE" --install-extension eamodio.gitlens --force
-  "$CODE" --install-extension github.vscode-pull-request-github --force
+  run "'$CODE' --install-extension catppuccin.catppuccin-vsc --force"
+  run "'$CODE' --install-extension pkief.material-icon-theme --force"
+  run "'$CODE' --install-extension vscodevim.vim --force"
+  run "'$CODE' --install-extension ms-python.python --force"
+  run "'$CODE' --install-extension ms-python.vscode-pylance --force"
+  run "'$CODE' --install-extension charliermarsh.ruff --force"
+  run "'$CODE' --install-extension rust-lang.rust-analyzer --force"
+  run "'$CODE' --install-extension golang.go --force"
+  run "'$CODE' --install-extension esbenp.prettier-vscode --force"
+  run "'$CODE' --install-extension dbaeumer.vscode-eslint --force"
+  run "'$CODE' --install-extension ms-azuretools.vscode-docker --force"
+  run "'$CODE' --install-extension hashicorp.terraform --force"
+  run "'$CODE' --install-extension redhat.vscode-yaml --force"
+  run "'$CODE' --install-extension eamodio.gitlens --force"
+  run "'$CODE' --install-extension github.vscode-pull-request-github --force"
   print_success "VSCode extensions installed"
 else
   print_error "VSCode not found, skipping extensions"
@@ -6164,16 +6065,16 @@ run "launchctl load -w '$HOME/Library/LaunchAgents/com.ollama.ollama.plist' 2>&1
 print_success "Ollama LaunchAgent created"
 
 # Step 16: Install Nix (optional) - WARNING: uses curl | sh
-if [ "$DRYRUN" = "0" ]; then
+if [ "${CI:-}" = "true" ] || [ "$DRYRUN" = "1" ]; then
+  print_info "[PLAN] Would offer optional Nix install"
+else
   read -p "Install Nix package manager? (y/N): " -n 1 -r
   echo
   if [[ $REPLY =~ ^[Yy]$ ]]; then
     print_info "Installing Nix (pinned to Determinate Systems installer)..."
-    run "curl -L https://install.determinate.systems/nix | sh -s -- install"
+    curl -L https://install.determinate.systems/nix | sh -s -- install
     print_success "Nix installed"
   fi
-else
-  print_info "[PLAN] Would prompt to install Nix via Determinate Systems installer"
 fi
 
 # Step 17: Install tmux plugins
@@ -6189,15 +6090,19 @@ run "sleep 2"
 run "/opt/homebrew/opt/postgresql@16/bin/createdb \"\$(whoami)\" 2>&1 || echo 'Database already exists'"
 
 # Step 19: Setup AeroSpace automation (optional)
-echo ""
-read -p "Setup AeroSpace workspace automation? (Y/n): " -n 1 -r
-echo
-if [[ ! $REPLY =~ ^[Nn]$ ]]; then
-  print_info "Setting up AeroSpace automation..."
-  if [[ -f "$SCRIPT_DIR/setup_aerospace_automation.sh" ]]; then
-    bash "$SCRIPT_DIR/setup_aerospace_automation.sh"
-  else
-    print_error "AeroSpace automation script not found"
+if [ "${CI:-}" = "true" ] || [ "$DRYRUN" = "1" ]; then
+  print_info "[PLAN] Would offer AeroSpace workspace automation setup"
+else
+  echo ""
+  read -p "Setup AeroSpace workspace automation? (Y/n): " -n 1 -r
+  echo
+  if [[ ! $REPLY =~ ^[Nn]$ ]]; then
+    print_info "Setting up AeroSpace automation..."
+    if [[ -f "$SCRIPT_DIR/setup_aerospace_automation.sh" ]]; then
+      bash "$SCRIPT_DIR/setup_aerospace_automation.sh"
+    else
+      print_error "AeroSpace automation script not found"
+    fi
   fi
 fi
 
@@ -6375,65 +6280,13 @@ print_success "Enjoy your automated workspace environment!"
 ---
 
 
-### File: `scripts/setup_git_hooks.sh`
-
-```
-#!/usr/bin/env bash
-# Setup git hooks for this repository
-# This script installs custom git hooks from .githooks/ directory
-
-set -euo pipefail
-
-# Colors for output
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-NC='\033[0m'
-
-echo -e "${YELLOW}Setting up git hooks...${NC}"
-
-# Get repository root
-REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || {
-    echo "Error: Not in a git repository"
-    exit 1
-}
-
-cd "$REPO_ROOT"
-
-# Check if .githooks directory exists
-if [ ! -d ".githooks" ]; then
-    echo "Error: .githooks directory not found"
-    exit 1
-fi
-
-# Configure git to use .githooks directory
-echo "Configuring git to use .githooks directory..."
-git config core.hooksPath .githooks
-
-# Make all hooks executable
-echo "Making hooks executable..."
-chmod +x .githooks/*
-
-echo -e "${GREEN}✓ Git hooks installed successfully!${NC}"
-echo ""
-echo "Installed hooks:"
-ls -1 .githooks/
-echo ""
-echo "Hooks will now run automatically with git operations."
-echo ""
-echo "To disable: git config --unset core.hooksPath"
-echo "To re-enable: git config core.hooksPath .githooks"
-```
-
----
-
-
 ---
 
 ## Generation Metadata
 
-- **Generated:** 2025-10-15 11:53:57
+- **Generated:** 2025-10-15 13:50:38
 - **Repository:** mac_dev_setup
-- **Files processed:** 41
+- **Files processed:** 38
 - **Generator:** scripts/generate_context.sh
 
 ---
