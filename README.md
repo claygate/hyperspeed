@@ -1,6 +1,8 @@
-# mac_dev_setup
+# Hyperspeed
 
-A complete, opinionated development environment for macOS with a focus on keyboard-driven workflows, modern CLI tools, and the beautiful Catppuccin Mocha theme.
+A constantly developed opinionated development environment for macOS with focus on keyboard-driven workflows, modern CLI tools, and the Catppuccin Mocha theme.
+
+**By [Claygate](https://github.com/claygate)** 🍎 - MacOS native AI enhanced development and research tools
 
 ## Philosophy
 
@@ -45,8 +47,8 @@ This setup prioritizes:
 
 ```bash
 # Clone this repository
-git clone <your-repo-url> ~/mac_dev_setup
-cd ~/mac_dev_setup
+git clone https://github.com/claygate/hyperspeed.git ~/hyperspeed
+cd ~/hyperspeed
 
 # Run the installation script
 chmod +x scripts/install.sh

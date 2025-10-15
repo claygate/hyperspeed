@@ -193,9 +193,11 @@ repos:
 ### File: `README.md`
 
 ```
-# mac_dev_setup
+# Hyperspeed
 
-A complete, opinionated development environment for macOS with a focus on keyboard-driven workflows, modern CLI tools, and the beautiful Catppuccin Mocha theme.
+A constantly developed opinionated development environment for macOS with focus on keyboard-driven workflows, modern CLI tools, and the Catppuccin Mocha theme.
+
+**By [Claygate](https://github.com/claygate)** 🍎 - MacOS native AI enhanced development and research tools
 
 ## Philosophy
 
@@ -240,8 +242,8 @@ This setup prioritizes:
 
 ```bash
 # Clone this repository
-git clone <your-repo-url> ~/mac_dev_setup
-cd ~/mac_dev_setup
+git clone https://github.com/claygate/hyperspeed.git ~/hyperspeed
+cd ~/hyperspeed
 
 # Run the installation script
 chmod +x scripts/install.sh
@@ -2802,7 +2804,8 @@ Trigger workspace initialization from launcher:
 
 - AeroSpace Documentation: https://nikitabobko.github.io/AeroSpace/
 - AeroSpace GitHub: https://github.com/nikitabobko/AeroSpace
-- This Setup: ~/mac_dev_setup/
+- Hyperspeed Repository: https://github.com/claygate/hyperspeed
+- This Setup: ~/hyperspeed/
 - Script Documentation: ~/.config/aerospace/scripts/README.md
 - Configuration File: ~/.config/aerospace/aerospace.toml
 
@@ -6284,7 +6287,7 @@ print_success "Enjoy your automated workspace environment!"
 
 ## Generation Metadata
 
-- **Generated:** 2025-10-15 13:50:38
+- **Generated:** 2025-10-15 13:58:41
 - **Repository:** mac_dev_setup
 - **Files processed:** 38
 - **Generator:** scripts/generate_context.sh
