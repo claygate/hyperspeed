@@ -1,5 +1,6 @@
 palette = "catppuccin_mocha"
 add_newline = false
+command_timeout = 500
 [palettes.catppuccin_mocha]
 rosewater = "#f5e0dc"
 flamingo = "#f2cdcd"

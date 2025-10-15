@@ -339,10 +339,16 @@ zsh -xv 2>&1 | ts -i '%.s'
 ```
 
 ### Homebrew Tap Credential Issues
-Some taps may require GitHub authentication. Use alternative installation methods:
+Some taps may require GitHub authentication:
 ```bash
-# Instead of brew tap + brew install
-curl -fsSL <installer-url> | bash
+# Option 1: Authenticate with GitHub CLI
+gh auth login
+
+# Option 2: Use SSH-authenticated taps
+brew tap owner/repo git@github.com:owner/repo
+
+# Option 3: Install from specific commit/tag (secure)
+brew install owner/repo/formula@version
 ```
 
 ### Mise Runtime Install Fails

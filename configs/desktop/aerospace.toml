@@ -29,14 +29,6 @@ outer.right = 24
 
 # Window detection rules - automatically place apps
 [[on-window-detected]]
-if.app-id = 'com.mitchellh.ghostty'
-check-further-callbacks = true
-
-[[on-window-detected]]
-if.app-id = 'com.google.Chrome'
-check-further-callbacks = true
-
-[[on-window-detected]]
 if.app-id = 'com.apple.Safari'
 run = 'move-node-to-workspace 4'
 

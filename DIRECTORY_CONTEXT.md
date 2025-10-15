@@ -61,7 +61,6 @@ Generated for providing full context to external LLMs.
 |____scripts
 | |____install.sh
 | |____setup_git_hooks.sh
-| |____mac_dev_final_setup.sh
 | |____setup_aerospace_automation.sh
 | |____generate_context.sh
 |____.github
@@ -631,10 +630,16 @@ zsh -xv 2>&1 | ts -i '%.s'
 ```
 
 ### Homebrew Tap Credential Issues
-Some taps may require GitHub authentication. Use alternative installation methods:
+Some taps may require GitHub authentication:
 ```bash
-# Instead of brew tap + brew install
-curl -fsSL <installer-url> | bash
+# Option 1: Authenticate with GitHub CLI
+gh auth login
+
+# Option 2: Use SSH-authenticated taps
+brew tap owner/repo git@github.com:owner/repo
+
+# Option 3: Install from specific commit/tag (secure)
+brew install owner/repo/formula@version
 ```
 
 ### Mise Runtime Install Fails
@@ -836,14 +841,6 @@ outer.left = 8
 outer.right = 24
 
 # Window detection rules - automatically place apps
-[[on-window-detected]]
-if.app-id = 'com.mitchellh.ghostty'
-check-further-callbacks = true
-
-[[on-window-detected]]
-if.app-id = 'com.google.Chrome'
-check-further-callbacks = true
-
 [[on-window-detected]]
 if.app-id = 'com.apple.Safari'
 run = 'move-node-to-workspace 4'
@@ -1929,8 +1926,8 @@ echo "Run 'Alt+i then ${CURRENT_WS}' to reinitialize this workspace"
 
 ```
 [user]
-	name = Peter Campbell Clarke
-	email = peter@holonic.bio
+	name = Your Name
+	email = your.email@example.com
 [pull]
 	rebase = false
 [init]
@@ -1999,6 +1996,7 @@ window-padding-y = 8
 ```
 palette = "catppuccin_mocha"
 add_newline = false
+command_timeout = 500
 [palettes.catppuccin_mocha]
 rosewater = "#f5e0dc"
 flamingo = "#f2cdcd"
@@ -2058,6 +2056,10 @@ style = "overlay1"
 
 ```
 set -g default-terminal "tmux-256color"
+set -ga terminal-overrides ",xterm-256color:Tc"
+set -g base-index 1
+setw -g pane-base-index 1
+set -g renumber-windows on
 set -g status-position top
 set -g history-limit 100000
 set -g mouse on
@@ -2088,6 +2090,8 @@ bind -n M-6 select-window -t 6
 bind -n M-7 select-window -t 7
 bind -n M-8 select-window -t 8
 bind -n M-9 select-window -t 9
+bind | split-window -h -c "#{pane_current_path}"
+bind - split-window -v -c "#{pane_current_path}"
 set -g @plugin 'tmux-plugins/tpm'
 set -g @plugin 'tmux-plugins/tmux-resurrect'
 set -g @plugin 'tmux-plugins/tmux-continuum'
@@ -2113,8 +2117,8 @@ export OPENROUTER_API_KEY="${OPENROUTER_API_KEY:-$(security find-generic-passwor
 # Autonomy slider for scripts: 0=plan-only (safe), 1=full-act
 export AUTONOMY="${AUTONOMY:-0}"
 
-# Added by Windsurf
-export PATH="/Users/p8/.codeium/windsurf/bin:$PATH"
+# Added by Windsurf (user-specific)
+[ -d "/Users/$USER/.codeium/windsurf/bin" ] && export PATH="/Users/$USER/.codeium/windsurf/bin:$PATH"
 
 # Development environment setup
 export PATH="/opt/homebrew/bin:/usr/local/bin:$HOME/.local/bin:$PATH"
@@ -2125,17 +2129,17 @@ export VISUAL=vim
 autoload -Uz compinit
 compinit
 
-eval "$(zoxide init zsh)"
-eval "$(starship init zsh)"
+command -v zoxide >/dev/null && eval "$(zoxide init zsh)"
+command -v starship >/dev/null && eval "$(starship init zsh)"
 bindkey -v
 export FZF_DEFAULT_COMMAND='fd --type f --hidden --follow --exclude .git'
 export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
 export FZF_DEFAULT_OPTS="--height 40% --layout=reverse --border --color=bg+:#313244,bg:#1e1e2e,spinner:#f5e0dc,hl:#f38ba8 --color=fg:#cdd6f4,header:#f38ba8,info:#cba6f7,pointer:#f5e0dc --color=marker:#f5e0dc,fg+:#cdd6f4,prompt:#cba6f7,hl+:#f38ba8"
-eval "$(fzf --zsh)"
-eval "$(carapace _carapace zsh)"
-eval "$(direnv hook zsh)"
-eval "$(mise activate zsh)"
-eval "$(atuin init zsh)"
+command -v fzf >/dev/null && eval "$(fzf --zsh)"
+command -v carapace >/dev/null && eval "$(carapace _carapace zsh)"
+command -v direnv >/dev/null && eval "$(direnv hook zsh)"
+command -v mise >/dev/null && eval "$(mise activate zsh)"
+command -v atuin >/dev/null && eval "$(atuin init zsh)"
 alias ls='eza -lah --group-directories-first --icons'
 alias cat='bat'
 alias grep='rg'
@@ -5053,9 +5057,8 @@ DRYRUN=0 ./scripts/install.sh
 
 ### Remaining Risks ⚠️
 
-- ⚠️ Git history still contains exposed key (action required)
-- ⚠️ Only workspace 1 fully refactored (2-7 need updates)
-- ⚠️ Pre-commit hooks not yet installed (one-time setup)
+- ⚠️ Git history still contains exposed key (action required - use BFG)
+- ⚠️ Pre-commit hooks not yet installed (one-time setup: `just hooks`)
 - ⚠️ CI workflow untested (no PR created yet)
 
 ## Resources
@@ -5802,8 +5805,8 @@ update:
 
 set -euo pipefail
 
-# DRYRUN mode: set DRYRUN=1 to plan without executing
-DRYRUN="${DRYRUN:-0}"
+# DRYRUN mode: set DRYRUN=0 to execute (defaults to safe plan-only)
+DRYRUN="${DRYRUN:-1}"
 
 # Execute command or show plan
 run() {
@@ -5844,26 +5847,35 @@ fi
 
 print_success "Homebrew found"
 
+if [ "$DRYRUN" = "1" ]; then
+  echo ""
+  echo "=========================================="
+  echo "RUNNING IN DRYRUN MODE (safe preview)"
+  echo "Set DRYRUN=0 to execute changes"
+  echo "=========================================="
+  echo ""
+fi
+
 # Step 1: Install Rosetta (for M1/M2 Macs)
 if [[ "$(uname -m)" == "arm64" ]]; then
   print_info "Installing Rosetta for Apple Silicon..."
-  /usr/sbin/softwareupdate --install-rosetta --agree-to-license 2>&1 | grep -v "installed" || print_success "Rosetta installed"
+  run "/usr/sbin/softwareupdate --install-rosetta --agree-to-license 2>&1 | grep -v 'installed' || echo 'Rosetta installed'"
 fi
 
 # Step 2: Update Homebrew
 print_info "Updating Homebrew..."
-brew update
+run "brew update"
 
 # Step 3: Tap repositories
 print_info "Tapping Homebrew repositories..."
-brew tap nikitabobko/tap 2>&1 || true
-brew tap FelixKratz/formulae 2>&1 || true
-brew tap oven-sh/bun 2>&1 || true
-brew tap tilt-dev/tap 2>&1 || true
+run "brew tap nikitabobko/tap 2>&1 || true"
+run "brew tap FelixKratz/formulae 2>&1 || true"
+run "brew tap oven-sh/bun 2>&1 || true"
+run "brew tap tilt-dev/tap 2>&1 || true"
 
 # Step 4: Install CLI tools
 print_info "Installing CLI tools (this will take a while)..."
-brew install \
+run "brew install \
   git gnupg openssh gh \
   zsh starship zoxide fzf ripgrep fd eza bat duf procs \
   jq yq hyperfine gawk coreutils findutils gnu-sed watch gnu-tar \
@@ -5878,13 +5890,13 @@ brew install \
   jj qemu \
   FelixKratz/formulae/sketchybar \
   FelixKratz/formulae/borders \
-  2>&1 | grep -E "🍺|already installed|Error" || true
+  2>&1 | grep -E '🍺|already installed|Error' || true"
 
 print_success "CLI tools installed"
 
 # Step 5: Install GUI applications
 print_info "Installing GUI applications..."
-brew install --cask \
+run "brew install --cask \
   font-jetbrains-mono-nerd-font \
   visual-studio-code \
   ghostty \
@@ -5895,24 +5907,24 @@ brew install --cask \
   obsidian \
   tailscale \
   ollama \
-  2>&1 | grep -E "🍺|already installed|Error" || true
+  2>&1 | grep -E '🍺|already installed|Error' || true"
 
 print_success "GUI applications installed"
 
 # Step 6: Karabiner-Elements (requires sudo)
 print_info "Installing Karabiner-Elements (requires sudo password)..."
-brew install --cask karabiner-elements 2>&1 || print_error "Karabiner install failed - run manually: brew install --cask karabiner-elements"
+run "brew install --cask karabiner-elements 2>&1 || echo 'Karabiner install failed - run manually: brew install --cask karabiner-elements'"
 
 # Step 7: macOS Settings
 print_info "Configuring macOS settings..."
-defaults write com.apple.dock autohide -bool true
-killall Dock
+run "defaults write com.apple.dock autohide -bool true"
+run "killall Dock"
 
 # Step 8: Create directory structure
 print_info "Creating directory structure..."
-mkdir -p "$HOME/.local/bin"
-mkdir -p "$HOME/.config"/{zsh,nvim,tmux,starship,karabiner,sketchybar,ghostty,aerospace,borders}
-mkdir -p "$HOME/dev"
+run "mkdir -p '$HOME/.local/bin'"
+run "mkdir -p '$HOME/.config'/{zsh,nvim,tmux,starship,karabiner,sketchybar,ghostty,aerospace,borders}"
+run "mkdir -p '$HOME/dev'"
 
 # Step 9: Install configurations
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -5922,22 +5934,22 @@ print_info "Installing configuration files..."
 
 # Shell configs
 if [[ -f "$CONFIG_DIR/shell/zshrc" ]]; then
-  cat "$CONFIG_DIR/shell/zshrc" >> "$HOME/.zshrc"
+  run "cat '$CONFIG_DIR/shell/zshrc' >> '$HOME/.zshrc'"
   print_success "Installed .zshrc"
 fi
 
 if [[ -f "$CONFIG_DIR/shell/starship.toml" ]]; then
-  cp "$CONFIG_DIR/shell/starship.toml" "$HOME/.config/starship.toml"
+  run "cp '$CONFIG_DIR/shell/starship.toml' '$HOME/.config/starship.toml'"
   print_success "Installed starship config"
 fi
 
 if [[ -f "$CONFIG_DIR/shell/tmux.conf" ]]; then
-  cp "$CONFIG_DIR/shell/tmux.conf" "$HOME/.tmux.conf"
+  run "cp '$CONFIG_DIR/shell/tmux.conf' '$HOME/.tmux.conf'"
   print_success "Installed tmux config"
 fi
 
 if [[ -f "$CONFIG_DIR/shell/ghostty_config" ]]; then
-  cp "$CONFIG_DIR/shell/ghostty_config" "$HOME/.config/ghostty/config"
+  run "cp '$CONFIG_DIR/shell/ghostty_config' '$HOME/.config/ghostty/config'"
   print_success "Installed Ghostty config"
 fi
 
@@ -6025,18 +6037,18 @@ fi
 
 # Step 13: Install pipx packages
 print_info "Installing pipx packages..."
-export PATH="/opt/homebrew/bin:$PATH"
-pipx ensurepath
-pipx install llm 2>&1 || true
-pipx install pre-commit 2>&1 || true
+run "export PATH='/opt/homebrew/bin:\$PATH'"
+run "pipx ensurepath"
+run "pipx install llm 2>&1 || true"
+run "pipx install pre-commit 2>&1 || true"
 print_success "pipx packages installed"
 
 # Step 14: Start services
 print_info "Starting services..."
-brew services start postgresql@16 2>&1 || true
-brew services start redis 2>&1 || true
-brew services start sketchybar 2>&1 || true
-brew services start borders 2>&1 || true
+run "brew services start postgresql@16 2>&1 || true"
+run "brew services start redis 2>&1 || true"
+run "brew services start sketchybar 2>&1 || true"
+run "brew services start borders 2>&1 || true"
 print_success "Services started"
 
 # Step 15: Create Ollama LaunchAgent
@@ -6065,29 +6077,33 @@ cat > "$HOME/Library/LaunchAgents/com.ollama.ollama.plist" <<'EOF'
 </plist>
 EOF
 
-launchctl load -w "$HOME/Library/LaunchAgents/com.ollama.ollama.plist" 2>&1 || true
+run "launchctl load -w '$HOME/Library/LaunchAgents/com.ollama.ollama.plist' 2>&1 || true"
 print_success "Ollama LaunchAgent created"
 
-# Step 16: Install Nix (optional)
-read -p "Install Nix package manager? (y/N): " -n 1 -r
-echo
-if [[ $REPLY =~ ^[Yy]$ ]]; then
-  print_info "Installing Nix..."
-  curl -L https://install.determinate.systems/nix | sh -s -- install
-  print_success "Nix installed"
+# Step 16: Install Nix (optional) - WARNING: uses curl | sh
+if [ "$DRYRUN" = "0" ]; then
+  read -p "Install Nix package manager? (y/N): " -n 1 -r
+  echo
+  if [[ $REPLY =~ ^[Yy]$ ]]; then
+    print_info "Installing Nix (pinned to Determinate Systems installer)..."
+    run "curl -L https://install.determinate.systems/nix | sh -s -- install"
+    print_success "Nix installed"
+  fi
+else
+  print_info "[PLAN] Would prompt to install Nix via Determinate Systems installer"
 fi
 
 # Step 17: Install tmux plugins
 print_info "Installing tmux plugins..."
-tmux start-server 2>&1 || true
-tmux new-session -d 2>&1 || true
-~/.tmux/plugins/tpm/scripts/install_plugins.sh 2>&1 || true
+run "tmux start-server 2>&1 || true"
+run "tmux new-session -d 2>&1 || true"
+run "~/.tmux/plugins/tpm/scripts/install_plugins.sh 2>&1 || true"
 print_success "tmux plugins installed"
 
 # Step 18: Create PostgreSQL database
 print_info "Creating PostgreSQL database..."
-sleep 2
-/opt/homebrew/opt/postgresql@16/bin/createdb "$(whoami)" 2>&1 || print_info "Database already exists"
+run "sleep 2"
+run "/opt/homebrew/opt/postgresql@16/bin/createdb \"\$(whoami)\" 2>&1 || echo 'Database already exists'"
 
 # Step 19: Setup AeroSpace automation (optional)
 echo ""
@@ -6128,81 +6144,6 @@ if [[ ! $REPLY =~ ^[Nn]$ ]]; then
   echo ""
 fi
 print_success "Setup complete! Enjoy your new development environment."
-```
-
----
-
-
-### File: `scripts/mac_dev_final_setup.sh`
-
-```
-#!/usr/bin/env bash
-set -euo pipefail
-
-echo "==> Final Mac Dev Setup"
-echo ""
-
-# 1. Install Karabiner-Elements (requires sudo)
-echo "==> Installing Karabiner-Elements (requires sudo password)..."
-if [ -f "/opt/homebrew/Caskroom/karabiner-elements/15.5.0/Karabiner-Elements.pkg" ]; then
-  sudo /usr/sbin/installer -pkg /opt/homebrew/Caskroom/karabiner-elements/15.5.0/Karabiner-Elements.pkg -target / || echo "Karabiner install failed or already installed"
-else
-  echo "Karabiner package not found, skipping..."
-fi
-echo ""
-
-# 2. Install remaining GUI apps (aerospace, tailscale, ollama)
-echo "==> Installing remaining GUI apps..."
-brew install --cask nikitabobko/tap/aerospace 2>&1 | grep -E "successfully installed|already installed|Error" || true
-brew install --cask tailscale 2>&1 | grep -E "successfully installed|already installed|Error" || true
-brew install --cask ollama 2>&1 | grep -E "successfully installed|already installed|Error" || true
-echo ""
-
-# 3. Install Nix
-echo "==> Installing Nix package manager..."
-if ! command -v nix >/dev/null 2>&1; then
-  curl -L https://install.determinate.systems/nix | sh -s -- install || echo "Nix install failed"
-else
-  echo "Nix already installed"
-fi
-echo ""
-
-# 4. Wait for PostgreSQL to be ready and create database
-echo "==> Setting up PostgreSQL database..."
-export PATH="/opt/homebrew/bin:$PATH"
-sleep 3
-/opt/homebrew/opt/postgresql@16/bin/createdb "$(whoami)" 2>&1 || echo "Database already exists or postgres not ready"
-echo ""
-
-# 5. Load Ollama LaunchAgent
-echo "==> Loading Ollama LaunchAgent..."
-launchctl load -w "$HOME/Library/LaunchAgents/com.ollama.ollama.plist" 2>&1 || echo "LaunchAgent already loaded"
-echo ""
-
-# 6. Open apps to grant permissions
-echo "==> Opening apps for first-time setup..."
-open -a "Karabiner-Elements" 2>&1 || true
-open -a "AeroSpace" 2>&1 || true
-sleep 2
-sketchybar --reload 2>&1 || echo "Sketchybar reload failed"
-echo ""
-
-# 7. Install devbox manually (since tap failed)
-echo "==> Checking devbox installation..."
-if ! command -v devbox >/dev/null 2>&1; then
-  echo "Devbox already installed via curl installer"
-else
-  echo "Devbox found at $(which devbox)"
-fi
-echo ""
-
-echo "==> ✅ Final setup complete!"
-echo ""
-echo "Next steps:"
-echo "  1. Restart your terminal: exec zsh"
-echo "  2. Grant permissions to Karabiner-Elements and AeroSpace in System Settings"
-echo "  3. Optional: Install mise runtimes: mise use -g node@lts python@3.12 rust@stable"
-echo ""
 ```
 
 ---
@@ -6407,9 +6348,9 @@ echo "To re-enable: git config core.hooksPath .githooks"
 
 ## Generation Metadata
 
-- **Generated:** 2025-10-15 11:03:07
+- **Generated:** 2025-10-15 11:47:04
 - **Repository:** mac_dev_setup
-- **Files processed:** 42
+- **Files processed:** 41
 - **Generator:** scripts/generate_context.sh
 
 ---

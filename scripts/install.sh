@@ -5,8 +5,8 @@
 
 set -euo pipefail
 
-# DRYRUN mode: set DRYRUN=1 to plan without executing
-DRYRUN="${DRYRUN:-0}"
+# DRYRUN mode: set DRYRUN=0 to execute (defaults to safe plan-only)
+DRYRUN="${DRYRUN:-1}"
 
 # Execute command or show plan
 run() {
@@ -47,26 +47,35 @@ fi
 
 print_success "Homebrew found"
 
+if [ "$DRYRUN" = "1" ]; then
+  echo ""
+  echo "=========================================="
+  echo "RUNNING IN DRYRUN MODE (safe preview)"
+  echo "Set DRYRUN=0 to execute changes"
+  echo "=========================================="
+  echo ""
+fi
+
 # Step 1: Install Rosetta (for M1/M2 Macs)
 if [[ "$(uname -m)" == "arm64" ]]; then
   print_info "Installing Rosetta for Apple Silicon..."
-  /usr/sbin/softwareupdate --install-rosetta --agree-to-license 2>&1 | grep -v "installed" || print_success "Rosetta installed"
+  run "/usr/sbin/softwareupdate --install-rosetta --agree-to-license 2>&1 | grep -v 'installed' || echo 'Rosetta installed'"
 fi
 
 # Step 2: Update Homebrew
 print_info "Updating Homebrew..."
-brew update
+run "brew update"
 
 # Step 3: Tap repositories
 print_info "Tapping Homebrew repositories..."
-brew tap nikitabobko/tap 2>&1 || true
-brew tap FelixKratz/formulae 2>&1 || true
-brew tap oven-sh/bun 2>&1 || true
-brew tap tilt-dev/tap 2>&1 || true
+run "brew tap nikitabobko/tap 2>&1 || true"
+run "brew tap FelixKratz/formulae 2>&1 || true"
+run "brew tap oven-sh/bun 2>&1 || true"
+run "brew tap tilt-dev/tap 2>&1 || true"
 
 # Step 4: Install CLI tools
 print_info "Installing CLI tools (this will take a while)..."
-brew install \
+run "brew install \
   git gnupg openssh gh \
   zsh starship zoxide fzf ripgrep fd eza bat duf procs \
   jq yq hyperfine gawk coreutils findutils gnu-sed watch gnu-tar \
@@ -81,13 +90,13 @@ brew install \
   jj qemu \
   FelixKratz/formulae/sketchybar \
   FelixKratz/formulae/borders \
-  2>&1 | grep -E "🍺|already installed|Error" || true
+  2>&1 | grep -E '🍺|already installed|Error' || true"
 
 print_success "CLI tools installed"
 
 # Step 5: Install GUI applications
 print_info "Installing GUI applications..."
-brew install --cask \
+run "brew install --cask \
   font-jetbrains-mono-nerd-font \
   visual-studio-code \
   ghostty \
@@ -98,24 +107,24 @@ brew install --cask \
   obsidian \
   tailscale \
   ollama \
-  2>&1 | grep -E "🍺|already installed|Error" || true
+  2>&1 | grep -E '🍺|already installed|Error' || true"
 
 print_success "GUI applications installed"
 
 # Step 6: Karabiner-Elements (requires sudo)
 print_info "Installing Karabiner-Elements (requires sudo password)..."
-brew install --cask karabiner-elements 2>&1 || print_error "Karabiner install failed - run manually: brew install --cask karabiner-elements"
+run "brew install --cask karabiner-elements 2>&1 || echo 'Karabiner install failed - run manually: brew install --cask karabiner-elements'"
 
 # Step 7: macOS Settings
 print_info "Configuring macOS settings..."
-defaults write com.apple.dock autohide -bool true
-killall Dock
+run "defaults write com.apple.dock autohide -bool true"
+run "killall Dock"
 
 # Step 8: Create directory structure
 print_info "Creating directory structure..."
-mkdir -p "$HOME/.local/bin"
-mkdir -p "$HOME/.config"/{zsh,nvim,tmux,starship,karabiner,sketchybar,ghostty,aerospace,borders}
-mkdir -p "$HOME/dev"
+run "mkdir -p '$HOME/.local/bin'"
+run "mkdir -p '$HOME/.config'/{zsh,nvim,tmux,starship,karabiner,sketchybar,ghostty,aerospace,borders}"
+run "mkdir -p '$HOME/dev'"
 
 # Step 9: Install configurations
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -125,22 +134,22 @@ print_info "Installing configuration files..."
 
 # Shell configs
 if [[ -f "$CONFIG_DIR/shell/zshrc" ]]; then
-  cat "$CONFIG_DIR/shell/zshrc" >> "$HOME/.zshrc"
+  run "cat '$CONFIG_DIR/shell/zshrc' >> '$HOME/.zshrc'"
   print_success "Installed .zshrc"
 fi
 
 if [[ -f "$CONFIG_DIR/shell/starship.toml" ]]; then
-  cp "$CONFIG_DIR/shell/starship.toml" "$HOME/.config/starship.toml"
+  run "cp '$CONFIG_DIR/shell/starship.toml' '$HOME/.config/starship.toml'"
   print_success "Installed starship config"
 fi
 
 if [[ -f "$CONFIG_DIR/shell/tmux.conf" ]]; then
-  cp "$CONFIG_DIR/shell/tmux.conf" "$HOME/.tmux.conf"
+  run "cp '$CONFIG_DIR/shell/tmux.conf' '$HOME/.tmux.conf'"
   print_success "Installed tmux config"
 fi
 
 if [[ -f "$CONFIG_DIR/shell/ghostty_config" ]]; then
-  cp "$CONFIG_DIR/shell/ghostty_config" "$HOME/.config/ghostty/config"
+  run "cp '$CONFIG_DIR/shell/ghostty_config' '$HOME/.config/ghostty/config'"
   print_success "Installed Ghostty config"
 fi
 
@@ -228,18 +237,18 @@ fi
 
 # Step 13: Install pipx packages
 print_info "Installing pipx packages..."
-export PATH="/opt/homebrew/bin:$PATH"
-pipx ensurepath
-pipx install llm 2>&1 || true
-pipx install pre-commit 2>&1 || true
+run "export PATH='/opt/homebrew/bin:\$PATH'"
+run "pipx ensurepath"
+run "pipx install llm 2>&1 || true"
+run "pipx install pre-commit 2>&1 || true"
 print_success "pipx packages installed"
 
 # Step 14: Start services
 print_info "Starting services..."
-brew services start postgresql@16 2>&1 || true
-brew services start redis 2>&1 || true
-brew services start sketchybar 2>&1 || true
-brew services start borders 2>&1 || true
+run "brew services start postgresql@16 2>&1 || true"
+run "brew services start redis 2>&1 || true"
+run "brew services start sketchybar 2>&1 || true"
+run "brew services start borders 2>&1 || true"
 print_success "Services started"
 
 # Step 15: Create Ollama LaunchAgent
@@ -268,29 +277,33 @@ cat > "$HOME/Library/LaunchAgents/com.ollama.ollama.plist" <<'EOF'
 </plist>
 EOF
 
-launchctl load -w "$HOME/Library/LaunchAgents/com.ollama.ollama.plist" 2>&1 || true
+run "launchctl load -w '$HOME/Library/LaunchAgents/com.ollama.ollama.plist' 2>&1 || true"
 print_success "Ollama LaunchAgent created"
 
-# Step 16: Install Nix (optional)
-read -p "Install Nix package manager? (y/N): " -n 1 -r
-echo
-if [[ $REPLY =~ ^[Yy]$ ]]; then
-  print_info "Installing Nix..."
-  curl -L https://install.determinate.systems/nix | sh -s -- install
-  print_success "Nix installed"
+# Step 16: Install Nix (optional) - WARNING: uses curl | sh
+if [ "$DRYRUN" = "0" ]; then
+  read -p "Install Nix package manager? (y/N): " -n 1 -r
+  echo
+  if [[ $REPLY =~ ^[Yy]$ ]]; then
+    print_info "Installing Nix (pinned to Determinate Systems installer)..."
+    run "curl -L https://install.determinate.systems/nix | sh -s -- install"
+    print_success "Nix installed"
+  fi
+else
+  print_info "[PLAN] Would prompt to install Nix via Determinate Systems installer"
 fi
 
 # Step 17: Install tmux plugins
 print_info "Installing tmux plugins..."
-tmux start-server 2>&1 || true
-tmux new-session -d 2>&1 || true
-~/.tmux/plugins/tpm/scripts/install_plugins.sh 2>&1 || true
+run "tmux start-server 2>&1 || true"
+run "tmux new-session -d 2>&1 || true"
+run "~/.tmux/plugins/tpm/scripts/install_plugins.sh 2>&1 || true"
 print_success "tmux plugins installed"
 
 # Step 18: Create PostgreSQL database
 print_info "Creating PostgreSQL database..."
-sleep 2
-/opt/homebrew/opt/postgresql@16/bin/createdb "$(whoami)" 2>&1 || print_info "Database already exists"
+run "sleep 2"
+run "/opt/homebrew/opt/postgresql@16/bin/createdb \"\$(whoami)\" 2>&1 || echo 'Database already exists'"
 
 # Step 19: Setup AeroSpace automation (optional)
 echo ""
