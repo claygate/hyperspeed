@@ -2,7 +2,7 @@
 
 A constantly developed opinionated development environment for macOS with focus on keyboard-driven workflows, modern CLI tools, and the Catppuccin Mocha theme.
 
-**By [Claygate](https://github.com/claygate)** 🍎 - MacOS native AI enhanced development and research tools
+Made with ❤️ by [Thrux](https://thrux.net)
 
 ## Philosophy
 
@@ -47,7 +47,7 @@ This setup prioritizes:
 
 ```bash
 # Clone this repository
-git clone https://github.com/claygate/hyperspeed.git ~/hyperspeed
+git clone https://github.com/thruxnet/hyperspeed.git ~/hyperspeed
 cd ~/hyperspeed
 
 # Run the installation script
