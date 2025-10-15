@@ -6287,7 +6287,7 @@ print_success "Enjoy your automated workspace environment!"
 
 ## Generation Metadata
 
-- **Generated:** 2025-10-15 13:58:41
+- **Generated:** 2025-10-15 14:06:20
 - **Repository:** mac_dev_setup
 - **Files processed:** 38
 - **Generator:** scripts/generate_context.sh
