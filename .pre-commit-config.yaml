@@ -20,7 +20,7 @@ repos:
       name: gitleaks (repo scan)
       args: ["--redact"]
 
-# regenerate DIRECTORY_CONTEXT.md on every commit
+# regenerate DIRECTORY_CONTEXT.md on every commit (local only, skip in CI)
 - repo: local
   hooks:
     - id: regenerate-directory-context
@@ -28,3 +28,4 @@ repos:
       entry: bash scripts/generate_context.sh
       language: system
       pass_filenames: false
+      stages: [commit]
