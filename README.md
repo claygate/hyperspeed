@@ -95,7 +95,7 @@ git config --global user.email "your.email@example.com"
 ## Directory Structure
 
 ```
-mac_dev_setup/
+hyperspeed/
 ├── README.md                    # This file
 ├── scripts/
 │   ├── install.sh               # Master installation script
@@ -414,8 +414,8 @@ brew bundle dump --file=~/backups/mac_dev_$(date +%Y%m%d)/Brewfile
 ### Restore on New Machine
 ```bash
 # Clone this repo
-git clone <repo-url> ~/mac_dev_setup
-cd ~/mac_dev_setup
+git clone https://github.com/thruxnet/hyperspeed.git ~/hyperspeed
+cd ~/hyperspeed
 
 # Run installation
 ./scripts/install.sh
