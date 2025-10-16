@@ -82,6 +82,7 @@ run "brew install \
   jq yq hyperfine gawk coreutils findutils gnu-sed watch gnu-tar \
   tmux reattach-to-user-namespace zellij \
   carapace lazygit git-delta tig atuin \
+  shfmt shellcheck \
   just xh httpie uv pipx mise direnv \
   neovim \
   postgresql@16 pgcli sqlite litecli redis \
@@ -211,6 +212,16 @@ fi
 print_info "Installing fzf shell integration..."
 run "\$(brew --prefix)/opt/fzf/install --all --no-bash --no-fish 2>&1 | grep -v 'Downloading' || true"
 print_success "fzf integration installed"
+
+# Step 11.1: Ensure Ghostty CLI shim (if ghostty command missing)
+print_info "Ensuring Ghostty CLI shim..."
+if ! command -v ghostty >/dev/null 2>&1; then
+  run "cat > '$HOME/.local/bin/ghostty' <<'EOS'\n#!/usr/bin/env bash\n# Launch Ghostty with optional args\nopen -a 'Ghostty' --args \"$@\"\nEOS"
+  run "chmod +x '$HOME/.local/bin/ghostty'"
+  print_success "Installed ghostty CLI shim at ~/.local/bin/ghostty"
+else
+  print_success "Ghostty CLI already available"
+fi
 
 # Step 12: Install VSCode extensions
 print_info "Installing VSCode extensions..."
